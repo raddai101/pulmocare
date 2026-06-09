@@ -1,0 +1,32 @@
+# =============================================================================
+# labels.txt — Classes et taxonomie médicale du modèle CNN
+# =============================================================================
+# Format : INDEX | LABEL_CNN | TYPE_CANCER | LOCALISATION | GRAVITE
+# =============================================================================
+
+# ── Classes CNN (Niveau 1 — prédiction directe du modèle) ────────────────────
+0|normal|Aucun cancer détecté|–|faible
+1|begnin case|Nodule ou masse bénigne (non cancéreuse)|périphérique ou centrale|faible
+2|malignant case|Masse maligne suspecte (cancéreuse)|variable|élevé à critique
+
+# ── Sous-types histologiques (Niveau 2 — enrichissement diagnostique) ─────────
+
+# NSCLC — Cancer du Poumon Non à Petites Cellules (≈ 85%)
+NSCLC|adenocarcinome|Adénocarcinome|périphérique|variable selon stade
+NSCLC|epidermoide|Carcinome Épidermoïde|central (grosses bronches)|lié au tabac
+NSCLC|grandes_cellules|Carcinome à Grandes Cellules|variable|rapide
+
+# SCLC — Cancer du Poumon à Petites Cellules (≈ 15%)
+SCLC|a_petites_cellules|Carcinome à Petites Cellules|central|très agressif
+
+# ── Stades TNM ────────────────────────────────────────────────────────────────
+STADE|0|Tis N0 M0|Cellules en surface uniquement|faible
+STADE|I|T1-T2a N0 M0|Tumeur localisée sans ganglion|modéré
+STADE|II|T1-T3 N1 M0|Extension locale ou ganglions proches|modéré
+STADE|III|T1-T4 N2-N3 M0|Extension régionale (thorax, médiastin)|élevé
+STADE|IV|Tout T, Tout N, M1|Métastases à distance (cerveau, foie, os)|critique
+
+# ── Localisations ─────────────────────────────────────────────────────────────
+LOC|central|Près des bronches principales, médiastin, grosses voies respiratoires
+LOC|peripherique|Vers les bords externes du poumon (zones périphériques)
+LOC|variable|Localisation variable selon le type histologique

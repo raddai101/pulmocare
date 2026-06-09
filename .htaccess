@@ -1,0 +1,88 @@
+# ============================================================
+#  PulmoCare IA — Apache Configuration
+#  Sécurité, réécriture URL, performances
+# ============================================================
+
+Options -Indexes -ExecCGI
+ServerSignature Off
+
+# ── Rewrite Engine ───────────────────────────────────────────
+RewriteEngine On
+RewriteBase /
+
+# Forcer HTTPS en production
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Bloquer accès aux fichiers sensibles
+RewriteRule ^\.env$                - [F,L]
+RewriteRule ^composer\.(json|lock)$ - [F,L]
+RewriteRule ^package\.json$        - [F,L]
+RewriteRule ^README\.md$           - [F,L]
+RewriteRule ^storage/              - [F,L]
+RewriteRule ^backend/config/       - [F,L]
+RewriteRule ^backend/helpers/      - [F,L]
+RewriteRule ^backend/models/       - [F,L]
+RewriteRule ^ai_model/             - [F,L]
+RewriteRule ^database/             - [F,L]
+
+# API endpoints — pas de .php visible
+RewriteRule ^api/upload$    backend/api/uploadScan.php [L,QSA]
+RewriteRule ^api/predict$   backend/api/predict.php    [L,QSA]
+RewriteRule ^api/login$     backend/api/loginApi.php   [L,QSA]
+RewriteRule ^api/pdf/([0-9]+)$ backend/api/export-pdf.php?id=$1 [L,QSA]
+
+# ── Security Headers ─────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options    "nosniff"
+    Header always set X-Frame-Options           "SAMEORIGIN"
+    Header always set X-XSS-Protection          "1; mode=block"
+    Header always set Referrer-Policy           "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy        "camera=(), microphone=(), geolocation=()"
+    Header always unset X-Powered-By
+    Header always unset Server
+
+    # Cache control pour assets statiques
+    <FilesMatch "\.(css|js|svg|png|jpg|webp|woff2?)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+
+    # Pas de cache pour les pages PHP
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# ── Compression Gzip ─────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ── Blocage IP / User-Agents malveillants ────────────────────
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (sqlmap|nikto|nmap|masscan|zgrab) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ── Protéger dossier uploads (pas d'exécution PHP) ───────────
+# Note: <Directory> directives are not allowed in .htaccess files.
+# Move this block into the Apache server config or place a separate .htaccess
+# inside assets/uploads if you need to disable PHP execution there.
+
+# ── Types MIME ───────────────────────────────────────────────
+<IfModule mod_mime.c>
+    AddType image/webp         .webp
+    AddType image/svg+xml      .svg
+    AddType application/dicom  .dcm
+    AddType font/woff2         .woff2
+</IfModule>
+
+# ── Limite taille upload ─────────────────────────────────────
+php_value upload_max_filesize  20M
+php_value post_max_size        22M
+php_value max_execution_time   120
+php_value max_input_time       120
+php_value memory_limit         256M

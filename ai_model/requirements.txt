@@ -1,0 +1,31 @@
+# ── PulmoCare IA — Python Requirements ──────────────────────
+# Modèle CNN détection cancer du poumon
+
+# Deep Learning
+tensorflow>=2.13.0
+keras>=2.13.0
+
+# Computer Vision
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Données & Calcul
+numpy>=1.24.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# API REST (optionnel - mode Flask)
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.0.0
+
+# Visualisation (évaluation & debug)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Médical
+pydicom>=2.4.0
+
+# Utilitaires
+python-dotenv>=1.0.0
+tqdm>=4.65.0

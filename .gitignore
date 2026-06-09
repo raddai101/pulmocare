@@ -1,0 +1,5 @@
+# Ignorer les datasets et archives lourdes
+ai_model/dataset/
+*.zip
+storage/logs/
+assets/uploads/scans/

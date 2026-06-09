@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 224" fill="none">
+  <rect width="224" height="224" fill="#060d1a"/>
+  <rect x="32" y="32" width="160" height="160" rx="8" fill="#0b1629" stroke="#1e3a5f" stroke-width="1"/>
+  <circle cx="112" cy="112" r="52" stroke="#1e3a5f" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="112" cy="112" r="30" fill="#0f1e38"/>
+  <path d="M97 112 Q112 88 127 112 Q112 136 97 112Z" fill="#1e3a5f"/>
+  <text x="112" y="188" text-anchor="middle" fill="#4a607a" font-size="10" font-family="Inter,sans-serif">CT Scan</text>
+</svg>

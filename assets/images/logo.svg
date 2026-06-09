@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <rect width="44" height="44" x="2" y="2" rx="12" fill="url(#g)"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 24c0-6.627 5.373-12 12-12s12 5.373 12 12c0 4.5-2.5 8.4-6.2 10.5l-1.4-2.4C33 30.7 35 27.5 35 24c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 3.5 2 6.7 4.6 8.1l-1.4 2.4C16.5 32.4 14 28.5 14 24z" fill="white" opacity=".9"/>
+  <path d="M26 18v6l4 2.5-1 1.7L25 26v-8h2z" fill="white"/>
+  <text x="56" y="32" fill="#e8edf8" font-size="20" font-weight="700" font-family="Space Grotesk,sans-serif" letter-spacing="-0.5">PulmoCare IA</text>
+</svg>
