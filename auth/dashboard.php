@@ -24,7 +24,7 @@ $pageTitle   = html_page_title('Tableau de bord');
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
-    <link rel="stylesheet" href="/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/dashboard.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -409,15 +409,15 @@ $pageTitle   = html_page_title('Tableau de bord');
     <nav class="sidebar__nav">
         <span class="nav-section-label">Principal</span>
 
-        <a href="/auth/dashboard.php" class="nav-link <?= html_active_class('dashboard.php', $currentFile) ?>">
+        <a href="/pulmocare/auth/dashboard.php" class="nav-link <?= html_active_class('dashboard.php', $currentFile) ?>">
             <i class="fa-solid fa-gauge-high"></i> Tableau de bord
         </a>
 
-        <a href="/pages/detection.php" class="nav-link <?= html_active_class('detection.php', $currentFile) ?>">
+        <a href="/pulmocare/pages/detection.php" class="nav-link <?= html_active_class('detection.php', $currentFile) ?>">
             <i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse
         </a>
 
-        <a href="/pages/resultats.php" class="nav-link <?= html_active_class('resultats.php', $currentFile) ?>">
+        <a href="/pulmocare/pages/resultats.php" class="nav-link <?= html_active_class('resultats.php', $currentFile) ?>">
             <i class="fa-solid fa-folder-open"></i> Mes analyses
             <?php if (($stats['total_analyses'] ?? 0) > 0): ?>
             <span class="nav-badge"><?= (int)$stats['total_analyses'] ?></span>
@@ -426,11 +426,11 @@ $pageTitle   = html_page_title('Tableau de bord');
 
         <span class="nav-section-label">Compte</span>
 
-        <a href="/pages/profil.php" class="nav-link <?= html_active_class('profil.php', $currentFile) ?>">
+        <a href="/pulmocare/pages/profil.php" class="nav-link <?= html_active_class('profil.php', $currentFile) ?>">
             <i class="fa-solid fa-user-doctor"></i> Mon profil
         </a>
 
-        <a href="/auth/logout.php" class="nav-link" onclick="return confirm('Se déconnecter ?')">
+        <a href="/pulmocare/auth/logout.php" class="nav-link" onclick="return confirm('Se déconnecter ?')">
             <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
         </a>
     </nav>
@@ -445,7 +445,7 @@ $pageTitle   = html_page_title('Tableau de bord');
             <div class="sidebar__user-name">Dr. <?= htmlspecialchars($user['prenom'] . ' ' . $user['nom']) ?></div>
             <div class="sidebar__user-role"><?= htmlspecialchars($user['specialite'] ?? 'Médecin') ?></div>
         </div>
-        <a href="/auth/logout.php" class="sidebar__logout" title="Déconnexion" onclick="return confirm('Se déconnecter ?')">
+        <a href="/pulmocare/auth/logout.php" class="sidebar__logout" title="Déconnexion" onclick="return confirm('Se déconnecter ?')">
             <i class="fa-solid fa-power-off"></i>
         </a>
     </div>
@@ -461,7 +461,7 @@ $pageTitle   = html_page_title('Tableau de bord');
             <p><?= date('l d F Y') ?> — Bienvenue, Dr. <?= htmlspecialchars($user['prenom']) ?></p>
         </div>
         <div class="topbar__actions">
-            <a href="/pages/detection.php" class="btn-primary">
+            <a href="/pulmocare/pages/detection.php" class="btn-primary">
                 <i class="fa-solid fa-plus"></i> Nouvelle analyse
             </a>
         </div>
@@ -518,14 +518,14 @@ $pageTitle   = html_page_title('Tableau de bord');
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--blue-500);margin-right:8px"></i>Analyses récentes</h3>
-                    <a href="/pages/resultats.php">Voir tout <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="/pulmocare/pages/resultats.php">Voir tout <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 <div class="card-body" style="padding:0">
                     <?php if (empty($recent)): ?>
                     <div class="empty-state">
                         <i class="fa-solid fa-folder-open"></i>
                         <p>Aucune analyse effectuée pour le moment.</p>
-                        <a href="/pages/detection.php" class="btn-primary" style="margin-top:16px;display:inline-flex">
+                        <a href="/pulmocare/pages/detection.php" class="btn-primary" style="margin-top:16px;display:inline-flex">
                             <i class="fa-solid fa-plus"></i> Lancer une analyse
                         </a>
                     </div>
@@ -558,7 +558,7 @@ $pageTitle   = html_page_title('Tableau de bord');
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="/pages/resultats.php?id=<?= (int)$det['id'] ?>" class="action-btn" title="Voir détail">
+                                        <a href="/pulmocare/pages/resultats.php?id=<?= (int)$det['id'] ?>" class="action-btn" title="Voir détail">
                                             <i class="fa-solid fa-eye"></i>
                                         </a>
                                     </td>

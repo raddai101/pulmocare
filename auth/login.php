@@ -1,10 +1,13 @@
 <?php
 declare(strict_types=1);
+
+use App\Config\SessionManager;
+
 require_once __DIR__ . '/../backend/functions/functions.php';
 
 // Rediriger si déjà connecté
 if (auth_is_logged()) {
-    response_redirect('/auth/dashboard.php');
+    response_redirect('/pulmocare/auth/dashboard.php');
 }
 
 $errors  = [];

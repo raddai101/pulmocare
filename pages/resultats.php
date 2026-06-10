@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $r = detection_delete((int)($_POST['detection_id'] ?? 0), $userId);
         html_set_flash($r['success'] ? 'success' : 'error', $r['message']);
-        response_redirect('/pages/resultats.php');
+        response_redirect('/pulmocare/pages/resultats.php');
     }
     if ($action === 'review') {
         detection_mark_reviewed((int)($_POST['detection_id'] ?? 0), security_sanitize($_POST['notes'] ?? ''));
@@ -191,12 +191,12 @@ tbody td:first-child{padding-left:22px}
   </div>
   <nav class="sidebar__nav">
     <span class="nav-section-label">Principal</span>
-    <a href="/auth/dashboard.php"  class="nav-link"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</a>
-    <a href="/pages/detection.php" class="nav-link"><i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse</a>
-    <a href="/pages/resultats.php" class="nav-link active"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
+    <a href="/pulmocare/auth/dashboard.php"  class="nav-link"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</a>
+    <a href="/pulmocare/pages/detection.php" class="nav-link"><i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse</a>
+    <a href="/pulmocare/pages/resultats.php" class="nav-link active"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
     <span class="nav-section-label">Compte</span>
-    <a href="/pages/profil.php"   class="nav-link"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
-    <a href="/auth/logout.php"    class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+    <a href="/pulmocare/pages/profil.php"   class="nav-link"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
+    <a href="/pulmocare/auth/logout.php"    class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
   </nav>
   <div class="sidebar__user">
     <img src="<?= htmlspecialchars(html_avatar_url($user['avatar'] ?? null)) ?>" alt="Avatar" class="sidebar__avatar">
@@ -216,7 +216,7 @@ tbody td:first-child{padding-left:22px}
           ? 'Patient : '.htmlspecialchars($detail['patient_prenom'].' '.$detail['patient_nom'])
           : $paginator['total'].' analyse(s) au total' ?></p>
     </div>
-    <a href="/pages/detection.php" class="btn-primary"><i class="fa-solid fa-plus"></i> Nouvelle analyse</a>
+    <a href="/pulmocare/pages/detection.php" class="btn-primary"><i class="fa-solid fa-plus"></i> Nouvelle analyse</a>
   </header>
 
   <main class="content">
@@ -231,7 +231,7 @@ tbody td:first-child{padding-left:22px}
       $bgCol = $rt==='normal' ? 'rgba(34,197,94,.12)' : ($rt==='suspect' ? 'rgba(245,158,11,.12)' : 'rgba(239,68,68,.12)');
     ?>
     <!-- ══ DETAIL ══ -->
-    <a href="/pages/resultats.php" class="detail-back"><i class="fa-solid fa-arrow-left"></i> Retour à la liste</a>
+    <a href="/pulmocare/pages/resultats.php" class="detail-back"><i class="fa-solid fa-arrow-left"></i> Retour à la liste</a>
 
     <div class="detail-grid">
       <!-- Scan image -->
@@ -246,7 +246,7 @@ tbody td:first-child{padding-left:22px}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
-          <a href="/backend/api/export-pdf.php?id=<?= $detailId ?>" class="btn-secondary" style="justify-content:center">
+          <a href="/pulmocare/backend/api/export-pdf.php?id=<?= $detailId ?>" class="btn-secondary" style="justify-content:center">
             <i class="fa-solid fa-file-pdf"></i> Exporter PDF
           </a>
           <form method="POST" onsubmit="return confirm('Supprimer définitivement cette analyse ?')">
@@ -353,7 +353,7 @@ tbody td:first-child{padding-left:22px}
         <div class="filter-group"><label class="filter-label">Au</label><input type="date" name="date_to" class="filter-control" value="<?= htmlspecialchars($filters['date_to']) ?>"></div>
         <div style="display:flex;gap:8px;align-items:flex-end">
           <button type="submit" class="btn-primary" style="padding:9px 16px"><i class="fa-solid fa-magnifying-glass"></i> Filtrer</button>
-          <a href="/pages/resultats.php" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i></a>
+          <a href="/pulmocare/pages/resultats.php" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i></a>
         </div>
       </form>
     </div>
@@ -367,7 +367,7 @@ tbody td:first-child{padding-left:22px}
         <i class="fa-solid fa-folder-open"></i>
         <h4>Aucune analyse trouvée</h4>
         <p><?= array_filter($filters) ? 'Aucun résultat pour ces filtres.' : 'Vous n\'avez pas encore effectué d\'analyse.' ?></p>
-        <a href="/pages/detection.php" class="btn-primary"><i class="fa-solid fa-plus"></i> Lancer une analyse</a>
+        <a href="/pulmocare/pages/detection.php" class="btn-primary"><i class="fa-solid fa-plus"></i> Lancer une analyse</a>
       </div>
       <?php else: ?>
       <div class="table-wrap">
@@ -388,7 +388,7 @@ tbody td:first-child{padding-left:22px}
             <td><?php if ($det['is_reviewed']): ?><span class="badge badge--reviewed"><i class="fa-solid fa-check"></i> Annoté</span><?php else: ?><span style="font-size:12px;color:var(--text-3)">En attente</span><?php endif; ?></td>
             <td>
               <div style="display:flex;gap:4px">
-                <a href="/pages/resultats.php?id=<?= (int)$det['id'] ?>" class="icon-btn" title="Voir"><i class="fa-solid fa-eye"></i></a>
+                <a href="/pulmocare/pages/resultats.php?id=<?= (int)$det['id'] ?>" class="icon-btn" title="Voir"><i class="fa-solid fa-eye"></i></a>
                 <form method="POST" style="display:inline" onsubmit="return confirm('Supprimer ?')">
                   <?= html_csrf_input() ?>
                   <input type="hidden" name="action" value="delete">

@@ -112,7 +112,7 @@ INSERT INTO hospitals (nom, ville, pays, telephone, email) VALUES
 -- Argon2id hash de "Admin@2024!"
 INSERT INTO users (hospital_id, nom, prenom, email, password, specialite, numero_ordre, role, is_active, email_verified_at) VALUES
     (1, 'Dupont', 'Marie', 'admin@pulmocare.fr',
-     '$argon2id$v=19$m=65536,t=4,p=1$placeholder_hash_change_in_production',
+     '$argon2id$v=19$m=65536,t=4,p=1$c3YyU1RUcEg2OFU2dm9naQ$wAaVm7rsNywhaHEWA5Jg+ZQevgRidAhKEgzfaVPSCTw',
      'Pneumologie', 'ORDRE-ADMIN-001', 'admin', 1, NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

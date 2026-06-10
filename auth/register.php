@@ -146,7 +146,7 @@ $pageTitle = html_page_title('Inscription');
 
             <div style="margin-top:18px" class="actions">
                 <button class="btn" type="submit">Créer mon compte</button>
-                <a href="/auth/login.php" style="color:#a8bdde; text-decoration:none;">J'ai déjà un compte</a>
+                <a href="/pulmocare/auth/login.php" style="color:#a8bdde; text-decoration:none;">J'ai déjà un compte</a>
             </div>
         </form>
     </div>

@@ -134,12 +134,12 @@ body{background:var(--bg-base);color:var(--text-1);font-family:'Inter',sans-seri
   </div>
   <nav class="sidebar__nav">
     <span class="nav-section-label">Principal</span>
-    <a href="/auth/dashboard.php"  class="nav-link"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</a>
-    <a href="/pages/detection.php" class="nav-link"><i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse</a>
-    <a href="/pages/resultats.php" class="nav-link"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
+    <a href="/pulmocare/auth/dashboard.php"  class="nav-link"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</a>
+    <a href="/pulmocare/pages/detection.php" class="nav-link"><i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse</a>
+    <a href="/pulmocare/pages/resultats.php" class="nav-link"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
     <span class="nav-section-label">Compte</span>
-    <a href="/pages/profil.php"  class="nav-link active"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
-    <a href="/auth/logout.php"   class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+    <a href="/pulmocare/pages/profil.php"  class="nav-link active"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
+    <a href="/pulmocare/auth/logout.php"   class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
   </nav>
   <div class="sidebar__user">
     <img src="<?= htmlspecialchars(html_avatar_url($user['avatar'] ?? null)) ?>" alt="Avatar" class="sidebar__avatar">
