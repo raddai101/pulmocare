@@ -420,3 +420,69 @@ def afficher_etapes_pretraitement(chemin_image: str):
 
     plt.tight_layout()
     plt.show()
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Prétraite une image CT Scan et affiche les informations résultantes.'
+    )
+    parser.add_argument(
+        '--image',
+        type=str,
+        help='Chemin vers une image CT Scan à prétraiter.'
+    )
+    parser.add_argument(
+        '--no-contrast',
+        action='store_true',
+        help='Désactive l amélioration du contraste CLAHE.'
+    )
+    parser.add_argument(
+        '--no-denoise',
+        action='store_true',
+        help='Désactive le filtrage de réduction de bruit.'
+    )
+    parser.add_argument(
+        '--output',
+        type=str,
+        help='Chemin de sortie pour enregistrer l image prétraitée.'
+    )
+    parser.add_argument(
+        '--show',
+        action='store_true',
+        help='Affiche l image prétraitée dans une fenêtre OpenCV.'
+    )
+
+    args = parser.parse_args()
+
+    if args.image is None:
+        parser.print_help()
+        return
+
+    if not os.path.exists(args.image):
+        raise FileNotFoundError(f"Image introuvable : {args.image}")
+
+    image_prep = pretraiter_depuis_chemin(
+        args.image,
+        appliquer_contraste=not args.no_contrast,
+        appliquer_debruitage=not args.no_denoise
+    )
+
+    print(f"Image prétraitée : {args.image}")
+    print(f"Forme : {image_prep.shape}")
+    print(f"Min/max : {float(image_prep.min()):.4f} / {float(image_prep.max()):.4f}")
+
+    if args.output:
+        sortie = args.output
+        cv2.imwrite(sortie, (image_prep[0] * 255).astype(np.uint8)[:, :, ::-1])
+        print(f"Image enregistrée : {sortie}")
+
+    if args.show:
+        cv2.imshow('Image prétraitée', (image_prep[0] * 255).astype(np.uint8)[:, :, ::-1])
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    main()

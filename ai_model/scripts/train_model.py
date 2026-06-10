@@ -16,6 +16,7 @@ from tensorflow.keras.callbacks import (
     ModelCheckpoint, EarlyStopping,
     ReduceLROnPlateau, TensorBoard, CSVLogger
 )
+from tensorflow.keras.optimizers import Adam
 from datetime import datetime
 
 from config import (
@@ -92,25 +93,32 @@ def creer_callbacks(
         verbose=1
     )
 
-    # Callback 4 : TensorBoard
+    # Callback 4 : TensorBoard (optionnel)
+    callback_tensorboard = None
     log_dir = os.path.join(LOGS_DIR, nom_experience)
-    callback_tensorboard = TensorBoard(
-        log_dir=log_dir,
-        histogram_freq=1,
-        write_graph=True
-    )
+    try:
+        callback_tensorboard = TensorBoard(
+            log_dir=log_dir,
+            histogram_freq=1,
+            write_graph=True
+        )
+    except Exception as exc:
+        print(f"  [WARN] TensorBoard non disponible, callback ignoré : {exc}")
 
     # Callback 5 : CSV Logger
     csv_path = os.path.join(LOGS_DIR, f'{nom_experience}_history.csv')
     callback_csv = CSVLogger(csv_path, separator=',', append=False)
 
-    return [
+    callbacks = [
         callback_checkpoint,
         callback_arret,
         callback_lr,
-        callback_tensorboard,
         callback_csv
     ]
+    if callback_tensorboard is not None:
+        callbacks.insert(-1, callback_tensorboard)
+
+    return callbacks
 
 
 # =============================================================================
@@ -399,3 +407,66 @@ def sauvegarder_config(
         json.dump(config, f, indent=2, ensure_ascii=False)
 
     print(f"[✓] Configuration sauvegardée : {chemin}")
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Entraînement du modèle CNN du projet Pulmocare'
+    )
+    parser.add_argument('--epochs', type=int, default=None,
+                        help='Nombre d epochs (défaut : config.py)')
+    parser.add_argument('--batch_size', type=int, default=None,
+                        help='Taille des batchs (défaut : config.py)')
+    parser.add_argument('--lr', type=float, default=None,
+                        help='Learning rate (défaut : config.py)')
+    parser.add_argument('--experience', type=str, default=None,
+                        help='Nom de l expérience')
+    parser.add_argument('--transfer', type=str, default=None,
+                        choices=['EfficientNetB0', 'ResNet50V2', 'VGG16'],
+                        help='Activer le transfer learning avec ce modèle de base')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Affiche les messages d erreur détaillés')
+
+    args = parser.parse_args()
+
+    from preprocess import charger_donnees_depuis_dossiers
+
+    batch_size = args.batch_size if args.batch_size is not None else BATCH_SIZE
+    epochs = args.epochs if args.epochs is not None else N_EPOCHS
+    lr = args.lr if args.lr is not None else LEARNING_RATE
+
+    print("\n" + "=" * 70)
+    print("  ENTRAÎNEMENT DIRECT DU MODELE CNN")
+    print("=" * 70)
+    print(f"  epochs     : {epochs}")
+    print(f"  batch_size : {batch_size}")
+    print(f"  learning_rate : {lr}")
+    print(f"  transfer   : {args.transfer if args.transfer else 'aucun'}")
+
+    flux_train, flux_val, _ = charger_donnees_depuis_dossiers(batch_size=batch_size)
+
+    if args.transfer:
+        model, history, exp = entrainer_avec_transfer(
+            flux_train, flux_val,
+            base_model_nom=args.transfer,
+            nom_experience=args.experience
+        )
+    else:
+        model, history, exp = entrainer_cnn(
+            flux_train, flux_val,
+            learning_rate=lr,
+            n_epochs=epochs,
+            nom_experience=args.experience
+        )
+
+    print(f"\n[✓] Entraînement terminé. Expérience : {exp}")
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as exc:
+        print(f"\n[Erreur] {type(exc).__name__}: {exc}")
+        raise
