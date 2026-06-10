@@ -326,14 +326,14 @@ def afficher_resume(model: Model):
     ----------
     model : Model   Modèle Keras compilé ou non
     """
-    print("\n" + "═" * 80)
-    print("  ARCHITECTURE CNN — Détection Cancer du Poumon")
-    print("═" * 80)
+    print("\n" + "=" * 80)
+    print("  ARCHITECTURE CNN - Détection Cancer du Poumon")
+    print("=" * 80)
     model.summary()
     total_params = model.count_params()
     print(f"\n  Total paramètres : {total_params:,}")
     print(f"  Paramètres entraînables : {sum([tf.size(w).numpy() for w in model.trainable_weights]):,}")
-    print("═" * 80 + "\n")
+    print("=" * 80 + "\n")
 
 
 def obtenir_config_architecture(
@@ -380,7 +380,7 @@ def sauvegarder_modele(model: Model, chemin: str = MODEL_PATH):
     """
     os.makedirs(os.path.dirname(chemin), exist_ok=True)
     model.save(chemin)
-    print(f"[✓] Modèle sauvegardé : {chemin}")
+    print(f"[OK] Modèle sauvegardé : {chemin}")
 
 
 def sauvegarder_poids(model: Model, nom: str = 'checkpoint'):
@@ -395,7 +395,7 @@ def sauvegarder_poids(model: Model, nom: str = 'checkpoint'):
     os.makedirs(WEIGHTS_DIR, exist_ok=True)
     chemin = os.path.join(WEIGHTS_DIR, f'{nom}.weights.h5')
     model.save_weights(chemin)
-    print(f"[✓] Poids sauvegardés : {chemin}")
+    print(f"[OK] Poids sauvegardés : {chemin}")
 
 
 def charger_modele(chemin: str = MODEL_PATH) -> Model:
@@ -414,7 +414,7 @@ def charger_modele(chemin: str = MODEL_PATH) -> Model:
         raise FileNotFoundError(f"Modèle introuvable : {chemin}")
 
     model = tf.keras.models.load_model(chemin)
-    print(f"[✓] Modèle chargé : {chemin}")
+    print(f"[OK] Modèle chargé : {chemin}")
     return model
 
 
@@ -436,5 +436,14 @@ def charger_poids(model: Model, nom: str = 'checkpoint') -> Model:
         raise FileNotFoundError(f"Poids introuvables : {chemin}")
 
     model.load_weights(chemin)
-    print(f"[✓] Poids chargés : {chemin}")
+    print(f"[OK] Poids chargés : {chemin}")
     return model
+
+
+if __name__ == '__main__':
+    # Exécution directe du script : construire et présenter le modèle.
+    # Les messages "port.cc" de TensorFlow sont des warnings normaux.
+    modele = construire_cnn()
+    modele = compiler_modele(modele)
+    afficher_resume(modele)
+    print('OK model_builder.py exécuté avec succès.')
