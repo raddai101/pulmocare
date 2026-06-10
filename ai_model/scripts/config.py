@@ -57,7 +57,7 @@ INPUT_SHAPE  = (*IMG_SIZE, IMG_CHANNELS)
 
 # ── Niveau 1 : Classes CNN ────────────────────────────────────────────────────
 
-CLASS_NAMES = ['normal', 'begnin case', 'malignant case']
+CLASS_NAMES  = ['normal', 'begnin case', 'malignant case']
 NUM_CLASSES = len(CLASS_NAMES)
 
 # Index des classes

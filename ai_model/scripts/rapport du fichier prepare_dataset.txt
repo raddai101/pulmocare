@@ -1,0 +1,65 @@
+rapport du fichier prepare_dataset.py apres execution 
+
+══════════════════════════════════════════════════════════════════════
+  PRÉPARATION & FUSION DU DATASET — CT Scan Cancer du Poumon
+======================================================================
+
+[1/7] Chargement des datasets...
+  Roboflow : 6821 images  →  {'malignant case': 6821}
+  IQ-OTH/NCCD : 2610 images chargées depuis C:\xampp\htdocs\pulmocare\ai_model\dataset\The IQ-OTHNCCD lung cancer dataset
+  IQ-OTH   : 2610 images  →  {'normal': 1248, 'malignant case': 1122, 'begnin case': 240}
+
+[2/7] Fusion des datasets...
+  1513 doublons supprimés
+  Total après fusion : 7918 images
+  Distribution : {'malignant case': 7382, 'normal': 416, 'begnin case': 120}
+
+[3/7] Calcul des poids de classe...
+
+  Poids de classe calculés (pour compenser le déséquilibre) :
+    [0] normal                   416 images (  5.3%)  →  weight = 6.3446
+    [1] begnin case              120 images (  1.5%)  →  weight = 21.9944
+    [2] malignant case          7382 images ( 93.2%)  →  weight = 0.3575
+
+[4/7] Découpage stratifié 70 / 20 / 10...
+  Train      :  5542  Validation :  1584  Test       :   792
+
+[5/7] Création de l'arborescence...
+  9 dossiers prêts
+
+[6/7] Copie des images...
+  [train       ]  5542 copiées
+  [validation  ]  1584 copiées
+  [test        ]   792 copiées
+
+[7/7] Sauvegarde des _annotations.csv...
+  [train       ] C:\xampp\htdocs\pulmocare\ai_model\dataset\train\_annotations.csv  (5542 lignes)
+  [validation  ] C:\xampp\htdocs\pulmocare\ai_model\dataset\validation\_annotations.csv  (1584 lignes)
+  [test        ] C:\xampp\htdocs\pulmocare\ai_model\dataset\test\_annotations.csv  (792 lignes)
+
+  Mise à jour de config.py...
+  config.py mis à jour  →  CLASS_NAMES=['normal', 'begnin case', 'malignant case']
+                         →  CLASS_WEIGHTS={0: 6.3446, 1: 21.9944, 2: 0.3575}
+
+══════════════════════════════════════════════════════════════════════
+  DISTRIBUTION FINALE DU DATASET
+══════════════════════════════════════════════════════════════════════
+  Classe                     Train  Valid.    Test   Total    Weight
+──────────────────────────────────────────────────────────────────────
+  normal                       291      83      42     416    6.3446
+  begnin case                   84      24      12     120   21.9944
+  malignant case              5167    1477     738    7382    0.3575
+──────────────────────────────────────────────────────────────────────
+  TOTAL                       5542    1584     792    7918
+  %                          70.0%   20.0%   10.0%
+
+  💡 Les CLASS_WEIGHTS compensent le déséquilibre :
+     Les classes minoritaires (normal, begnin) ont un poids élevé
+     → le modèle leur accordera plus d'importance lors de l'entraînement
+══════════════════════════════════════════════════════════════════════
+
+  Contenu des dossiers :
+    train           5542 images   [normal: 291,  begnin: 84,  malignant: 5167]
+    validation      1584 images   [normal: 83,  begnin: 24,  malignant: 1477]
+    test             792 images   [normal: 42,  begnin: 12,  malignant: 738]
+✓ Dataset prêt — vous pouvez lancer l'entraînement !

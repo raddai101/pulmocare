@@ -54,6 +54,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 
 
+# Chemins par défaut basés sur la structure du dépôt
+DEFAULT_DATASET_DIR = Path(__file__).resolve().parent.parent / 'dataset'
+DEFAULT_CSV_ROBOFLOW = DEFAULT_DATASET_DIR / 'Roboflow' / 'train' / '_annotations.csv'
+DEFAULT_DOSSIER_IQOTH = DEFAULT_DATASET_DIR / 'The IQ-OTHNCCD lung cancer dataset'
+DEFAULT_SCRIPTS_DIR = Path(__file__).resolve().parent
+
+
 # =============================================================================
 # MAPPING DES CLASSES
 # =============================================================================
@@ -140,15 +147,24 @@ def lire_dossier_iqoth(dossier_iqoth: str) -> pd.DataFrame:
     lignes = []
 
     sous_dossiers_classes = {
-        'Normal':    'normal',
-        'normal':    'normal',
-        'NORMAL':    'normal',
-        'Benign':    'begnin case',
-        'benign':    'begnin case',
-        'BENIGN':    'begnin case',
-        'Malignant': 'malignant case',
-        'malignant': 'malignant case',
-        'MALIGNANT': 'malignant case',
+        'Normal':       'normal',
+        'normal':       'normal',
+        'NORMAL':       'normal',
+        'Normal cases': 'normal',
+        'normal cases': 'normal',
+        'NORMAL CASES': 'normal',
+        'Benign':       'begnin case',
+        'benign':       'begnin case',
+        'BENIGN':       'begnin case',
+        'Benign cases': 'begnin case',
+        'benign cases': 'begnin case',
+        'Bengin cases': 'begnin case',
+        'bengin cases': 'begnin case',
+        'MALIGNANT':    'malignant case',
+        'Malignant':    'malignant case',
+        'malignant':    'malignant case',
+        'Malignant cases':'malignant case',
+        'malignant cases':'malignant case',
     }
 
     for sous_dossier, classe_cnn in sous_dossiers_classes.items():
@@ -611,28 +627,31 @@ def construire_parser():
      python prepare_dataset.py \\
          --dataset_dir   ai_model/dataset \\
          --csv_roboflow  ai_model/dataset/Roboflow/train/_annotations.csv \\
-         --dossier_iqoth /chemin/vers/IQ-OTH_NCCD \\
-         --scripts_dir   ai_model/scripts \\
+         --dossier_iqoth "ai_model/dataset/The IQ-OTHNCCD lung cancer dataset" \
+         --scripts_dir   ai_model/scripts \
          --no_copy
 
   3. Si la distribution est correcte, lancer avec copie :
-     python prepare_dataset.py \\
-         --dataset_dir   ai_model/dataset \\
-         --csv_roboflow  ai_model/dataset/Roboflow/train/_annotations.csv \\
-         --dossier_iqoth /chemin/vers/IQ-OTH_NCCD \\
+     python prepare_dataset.py \
+         --dataset_dir   ai_model/dataset \
+         --csv_roboflow  ai_model/dataset/Roboflow/train/_annotations.csv \
+         --dossier_iqoth "ai_model/dataset/The IQ-OTHNCCD lung cancer dataset" \
          --scripts_dir   ai_model/scripts
+
+  4. Ou sans arguments depuis la racine du dépôt :
+     python ai_model/scripts/prepare_dataset.py
         """
     )
 
-    parser.add_argument('--dataset_dir',   required=True,
+    parser.add_argument('--dataset_dir',   default=str(DEFAULT_DATASET_DIR),
                         help='Dossier racine du dataset (train/ test/ validation/)')
-    parser.add_argument('--csv_roboflow',  required=True,
+    parser.add_argument('--csv_roboflow',  default=str(DEFAULT_CSV_ROBOFLOW),
                         help='_annotations.csv du dataset Roboflow (train)')
-    parser.add_argument('--dossier_iqoth', default=None,
-                        help='Dossier racine IQ-OTH/NCCD (Normal/ Benign/ Malignant/)')
+    parser.add_argument('--dossier_iqoth', default=str(DEFAULT_DOSSIER_IQOTH),
+                        help='Dossier racine IQ-OTH/NCCD (Normal cases/ Bengin cases/ Malignant cases)')
     parser.add_argument('--csv_iqoth',     default=None,
                         help='Alternative : _annotations.csv du dataset IQ-OTH/NCCD')
-    parser.add_argument('--scripts_dir',   default=None,
+    parser.add_argument('--scripts_dir',   default=str(DEFAULT_SCRIPTS_DIR),
                         help='Dossier scripts/ pour mettre à jour config.py')
     parser.add_argument('--graine',        type=int, default=42,
                         help='Graine aléatoire (défaut: 42)')
