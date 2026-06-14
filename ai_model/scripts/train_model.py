@@ -12,12 +12,20 @@ import os
 import json
 import numpy as np
 import tensorflow as tf
+
+# Désactiver TensorBoard et tf.summary pour éviter TBNotInstalledError
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.get_logger().setLevel('ERROR')
+
 from tensorflow.keras.callbacks import (
     ModelCheckpoint, EarlyStopping,
-    ReduceLROnPlateau, TensorBoard, CSVLogger
+    ReduceLROnPlateau, CSVLogger
 )
 from tensorflow.keras.optimizers import Adam
 from datetime import datetime
+
+# Désactiver les appels TensorFlow internes à TensorBoard
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from config import (
     CONV_BLOCKS, DENSE_LAYERS, NUM_CLASSES, INPUT_SHAPE,
@@ -93,19 +101,7 @@ def creer_callbacks(
         verbose=1
     )
 
-    # Callback 4 : TensorBoard (optionnel)
-    callback_tensorboard = None
-    log_dir = os.path.join(LOGS_DIR, nom_experience)
-    try:
-        callback_tensorboard = TensorBoard(
-            log_dir=log_dir,
-            histogram_freq=1,
-            write_graph=True
-        )
-    except Exception as exc:
-        print(f"  [WARN] TensorBoard non disponible, callback ignoré : {exc}")
-
-    # Callback 5 : CSV Logger
+    # Callback 4 : CSV Logger
     csv_path = os.path.join(LOGS_DIR, f'{nom_experience}_history.csv')
     callback_csv = CSVLogger(csv_path, separator=',', append=False)
 
@@ -115,8 +111,6 @@ def creer_callbacks(
         callback_lr,
         callback_csv
     ]
-    if callback_tensorboard is not None:
-        callbacks.insert(-1, callback_tensorboard)
 
     return callbacks
 
@@ -211,14 +205,21 @@ def entrainer_cnn(
         except (ImportError, AttributeError):
             print("  Aucun class_weight défini — entraînement sans pondération")
 
-    history = model.fit(
-        flux_train,
-        validation_data=flux_val,
-        epochs=n_epochs,
-        callbacks=callbacks,
-        class_weight=class_weight,
-        verbose=1
-    )
+    history = None
+    try:
+        history = model.fit(
+            flux_train,
+            validation_data=flux_val,
+            epochs=n_epochs,
+            callbacks=callbacks,
+            class_weight=class_weight,
+            verbose=1
+        )
+    except KeyboardInterrupt:
+        chemin_interrupt = os.path.join(WEIGHTS_DIR, f'{nom_experience}_interrupted.weights.h5')
+        model.save_weights(chemin_interrupt)
+        print(f"\n[!] Entraînement interrompu par l'utilisateur. Poids sauvés : {chemin_interrupt}")
+        raise
 
     # ── Sauvegarde finale ─────────────────────────────────────────────────────
     sauvegarder_modele(model, MODEL_PATH)
@@ -315,13 +316,20 @@ def entrainer_avec_transfer(
         metrics=['accuracy']
     )
     callbacks_p1 = creer_callbacks(f'{nom_experience}_phase1')
-    history_p1 = model.fit(
-        flux_train,
-        validation_data=flux_val,
-        epochs=n_epochs_figer,
-        callbacks=callbacks_p1,
-        verbose=1
-    )
+    history_p1 = None
+    try:
+        history_p1 = model.fit(
+            flux_train,
+            validation_data=flux_val,
+            epochs=n_epochs_figer,
+            callbacks=callbacks_p1,
+            verbose=1
+        )
+    except KeyboardInterrupt:
+        chemin_interrupt = os.path.join(WEIGHTS_DIR, f'{nom_experience}_phase1_interrupted.weights.h5')
+        model.save_weights(chemin_interrupt)
+        print(f"\n[!] Entraînement interrompu pendant la phase 1. Poids sauvés : {chemin_interrupt}")
+        raise
 
     # ── Phase 2 : Fine-tuning ─────────────────────────────────────────────────
     print(f"\n[Phase 2] Fine-tuning : libération des {nb_couches_liberer} dernières couches...")
@@ -335,14 +343,21 @@ def entrainer_avec_transfer(
         metrics=['accuracy']
     )
     callbacks_p2 = creer_callbacks(f'{nom_experience}_phase2')
-    history_p2 = model.fit(
-        flux_train,
-        validation_data=flux_val,
-        epochs=n_epochs_finetune,
-        initial_epoch=n_epochs_figer,
-        callbacks=callbacks_p2,
-        verbose=1
-    )
+    history_p2 = None
+    try:
+        history_p2 = model.fit(
+            flux_train,
+            validation_data=flux_val,
+            epochs=n_epochs_finetune,
+            initial_epoch=n_epochs_figer,
+            callbacks=callbacks_p2,
+            verbose=1
+        )
+    except KeyboardInterrupt:
+        chemin_interrupt = os.path.join(WEIGHTS_DIR, f'{nom_experience}_phase2_interrupted.weights.h5')
+        model.save_weights(chemin_interrupt)
+        print(f"\n[!] Entraînement interrompu pendant la phase 2. Poids sauvés : {chemin_interrupt}")
+        raise
 
     sauvegarder_modele(model, MODEL_PATH)
     print(f"\n[✓] Transfer learning terminé ! Expérience : {nom_experience}")

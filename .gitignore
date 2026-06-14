@@ -2,4 +2,24 @@
 ai_model/dataset/
 *.zip
 storage/logs/
-assets/uploads/scans/
+assets/uploads/scans/ai_model/dataset/
+*.h5
+*.weights.h5
+logs/
+exports/
+ai_model/model/weights/
+*.weights.h5
+# IA
+*.weights.h5
+*.h5
+*.keras
+*.pt
+*.pth
+*.onnx
+
+# Datasets
+ai_model/The IQ-OTHNCCD lung cancer dataset/
+
+# Python
+__pycache__/
+*.pyc

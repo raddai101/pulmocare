@@ -63,3 +63,217 @@ rapport du fichier prepare_dataset.py apres execution
     validation      1584 images   [normal: 83,  begnin: 24,  malignant: 1477]
     test             792 images   [normal: 42,  begnin: 12,  malignant: 738]
 ✓ Dataset prêt — vous pouvez lancer l'entraînement !
+
+===============Rappoert apres entrainement du cnn avec  train_model.py ===============
+
+[2/4] Compilation...
+[3/4] Création des callbacks...
+[4/4] Entraînement (50 epochs max)...
+
+  Aucun class_weight défini — entraînement sans pondération
+Epoch 1/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 4s/step - accuracy: 0.9052 - loss: 1.6491    
+Epoch 1: val_accuracy improved from None to 0.87879, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 1: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 768s 4s/step - accuracy: 0.9278 - loss: 0.6824 - val_accuracy: 0.8788 - val_loss: 0.8270 - learning_rate: 0.0010
+Epoch 2/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 2s/step - accuracy: 0.9421 - loss: 0.3268  
+Epoch 2: val_accuracy improved from 0.87879 to 0.89141, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 2: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 414s 2s/step - accuracy: 0.9432 - loss: 0.3212 - val_accuracy: 0.8914 - val_loss: 0.5805 - learning_rate: 0.0010
+Epoch 3/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9423 - loss: 0.2994      
+Epoch 3: val_accuracy improved from 0.89141 to 0.94508, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 3: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 592s 3s/step - accuracy: 0.9475 - loss: 0.2931 - val_accuracy: 0.9451 - val_loss: 0.2903 - learning_rate: 0.0010
+Epoch 4/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9451 - loss: 0.2812  
+Epoch 4: val_accuracy improved from 0.94508 to 0.95896, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 4: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 579s 3s/step - accuracy: 0.9480 - loss: 0.2697 - val_accuracy: 0.9590 - val_loss: 0.2485 - learning_rate: 0.0010
+Epoch 5/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 4s/step - accuracy: 0.9523 - loss: 0.2515  
+Epoch 5: val_accuracy did not improve from 0.95896
+174/174 ━━━━━━━━━━━━━━━━━━━━ 737s 4s/step - accuracy: 0.9500 - loss: 0.2492 - val_accuracy: 0.9426 - val_loss: 0.2552 - learning_rate: 0.0010
+Epoch 6/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 5s/step - accuracy: 0.9557 - loss: 0.2359   
+Epoch 6: val_accuracy improved from 0.95896 to 0.95960, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 6: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 1008s 6s/step - accuracy: 0.9529 - loss: 0.2328 - val_accuracy: 0.9596 - val_loss: 0.2181 - learning_rate: 0.0010
+Epoch 7/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 6s/step - accuracy: 0.9522 - loss: 0.2264   
+Epoch 7: val_accuracy improved from 0.95960 to 0.96086, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 7: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 1094s 6s/step - accuracy: 0.9536 - loss: 0.2187 - val_accuracy: 0.9609 - val_loss: 0.2067 - learning_rate: 0.0010
+Epoch 8/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 5s/step - accuracy: 0.9531 - loss: 0.2121   
+Epoch 8: val_accuracy improved from 0.96086 to 0.96402, saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+
+Epoch 8: finished saving model to c:\xampp\htdocs\pulmocare\ai_model\model\weights\exp_4conv_2dense_20260611_131448_best.weights.h5
+174/174 ━━━━━━━━━━━━━━━━━━━━ 836s 5s/step - accuracy: 0.9534 - loss: 0.2070 - val_accuracy: 0.9640 - val_loss: 0.1915 - learning_rate: 0.0010
+Epoch 9/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9568 - loss: 0.1949   
+Epoch 9: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 567s 3s/step - accuracy: 0.9571 - loss: 0.1951 - val_accuracy: 0.9179 - val_loss: 0.2164 - learning_rate: 0.0010
+Epoch 10/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9537 - loss: 0.1831   
+Epoch 10: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 629s 4s/step - accuracy: 0.9524 - loss: 0.1864 - val_accuracy: 0.9583 - val_loss: 0.1791 - learning_rate: 0.0010
+Epoch 11/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 4s/step - accuracy: 0.9543 - loss: 0.1786   
+Epoch 11: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 655s 4s/step - accuracy: 0.9545 - loss: 0.1786 - val_accuracy: 0.9179 - val_loss: 0.2031 - learning_rate: 0.0010
+Epoch 12/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 4s/step - accuracy: 0.9557 - loss: 0.1707      
+Epoch 12: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 671s 4s/step - accuracy: 0.9538 - loss: 0.1703 - val_accuracy: 0.9640 - val_loss: 0.1553 - learning_rate: 0.0010
+Epoch 13/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 4s/step - accuracy: 0.9454 - loss: 0.1739   
+Epoch 13: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 728s 4s/step - accuracy: 0.9511 - loss: 0.1653 - val_accuracy: 0.9552 - val_loss: 0.1623 - learning_rate: 0.0010
+Epoch 14/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9550 - loss: 0.1545   
+Epoch 14: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 601s 3s/step - accuracy: 0.9534 - loss: 0.1578 - val_accuracy: 0.9564 - val_loss: 0.1548 - learning_rate: 0.0010
+Epoch 15/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 5s/step - accuracy: 0.9561 - loss: 0.1517   
+Epoch 15: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 852s 5s/step - accuracy: 0.9556 - loss: 0.1521 - val_accuracy: 0.9634 - val_loss: 0.1382 - learning_rate: 0.0010
+Epoch 16/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 3s/step - accuracy: 0.9585 - loss: 0.1460  
+Epoch 16: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 623s 4s/step - accuracy: 0.9599 - loss: 0.1448 - val_accuracy: 0.9179 - val_loss: 0.2228 - learning_rate: 0.0010
+Epoch 17/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 2s/step - accuracy: 0.9595 - loss: 0.1329      
+Epoch 17: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 487s 2s/step - accuracy: 0.9594 - loss: 0.1374 - val_accuracy: 0.9173 - val_loss: 0.2284 - learning_rate: 0.0010
+Epoch 18/50
+174/174 ━━━━━━━━━━━━━━━━━━━━ 0s 2s/step - accuracy: 0.9503 - loss: 0.1537  
+Epoch 18: val_accuracy did not improve from 0.96402
+174/174 ━━━━━━━━━━━━━━━━━━━━ 376s 2s/step - accuracy: 0.9516 - loss: 0.1487 - val_accuracy: 0.9154 - val_loss: 0.1968 - learning_rate: 0.0010
+Epoch 18: early stopping
+Restoring model weights from the end of the best epoch: 8.
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+[OK] Modèle sauvegardé : c:\xampp\htdocs\pulmocare\ai_model\model\cnn_model.h5
+[✓] Historique sauvegardé : c:\xampp\htdocs\pulmocare\ai_model\logs\exp_4conv_2dense_20260611_131448_history.json
+[✓] Configuration sauvegardée : c:\xampp\htdocs\pulmocare\ai_model\logs\exp_4conv_2dense_20260611_131448_config.json
+
+[✓] Entraînement terminé ! Expérience : exp_4conv_2dense_20260611_131448
+
+[✓] Entraînement terminé. Expérience : exp_4conv_2dense_20260611_131448
+
+
+======================================================================
+  ÉVALUATION DU MODÈLE CNN - CANCER DU POUMON
+======================================================================
+
+📁 [1/5] Vérification du modèle...
+     Chemin attendu : c:\xampp\htdocs\pulmocare\ai_model\model\cnn_model.h5
+     ✅ Modèle trouvé (300.1 Mo)
+
+📁 [2/5] Chargement du modèle...
+I0000 00:00:1781274654.998525   37836 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+[OK] Modèle chargé : c:\xampp\htdocs\pulmocare\ai_model\model\cnn_model.h5
+     ✅ Modèle chargé avec succès
+     Architecture : CancerPoumon_CNN
+     Input shape : (None, 224, 224, 3)
+     Output shape : (None, 3)
+
+📁 [3/5] Chargement des données de test...
+Found 5542 images belonging to 3 classes.
+Found 1584 images belonging to 3 classes.
+Found 792 images belonging to 3 classes.
+     ✅ Données chargées
+     - Train      : 5542 images
+     - Validation : 1584 images
+     - Test       : 792 images
+     Distribution test :
+       - normal: 42 images
+       - begnin case: 12 images
+       - malignant case: 738 images
+
+📁 [4/5] Recherche de l'historique d'entraînement...
+     ✅ Historique trouvé : exp_4conv_2dense_20260611_131448_history.json
+
+📁 [5/5] Lancement de l'évaluation complète...
+
+
+══════════════════════════════════════════════════════════════════════
+  ÉVALUATION COMPLÈTE DU MODÈLE CNN
+══════════════════════════════════════════════════════════════════════
+[Évaluation] Collecte des prédictions...
+  → 792 images analysées
+
+[1/4] Calcul des métriques...
+[2/4] Matrice de confusion...
+[✓] Matrice de confusion sauvegardée : c:\xampp\htdocs\pulmocare\ai_model\exports\evaluation_finale_confusion.png
+[3/4] Courbes ROC...
+[✓] Courbes ROC sauvegardées : c:\xampp\htdocs\pulmocare\ai_model\exports\evaluation_finale_roc.png
+[4/4] Courbes d'apprentissage...
+[✓] Courbes d'apprentissage sauvegardées : c:\xampp\htdocs\pulmocare\ai_model\exports\evaluation_finale_learning.png
+
+────────────────────────────────────────────────────────────
+  BILAN GLOBAL
+────────────────────────────────────────────────────────────
+  Accuracy            : 95.83%
+  Precision (macro)   : 54.75%
+  Recall (macro)      : 56.74%
+  F1-Score (macro)    : 55.72%
+  AUC (macro)         : 0.9739
+
+────────────────────────────────────────────────────────────
+  MÉTRIQUES PAR CLASSE
+────────────────────────────────────────────────────────────
+  Classe                  Précision     Recall         F1        AUC
+  ────────────────────────────────────────────────────────
+  normal                     66.67%     71.43%     68.97%     0.9820
+  begnin case                 0.00%      0.00%      0.00%     0.9531
+  malignant case             97.59%     98.78%     98.18%     0.9865
+
+────────────────────────────────────────────────────────────
+  ⚠️  ANALYSE CRITIQUE — Classe 'malignant case'
+────────────────────────────────────────────────────────────
+  Sensibilité (Recall malin)  : 98.78%
+  Spécificité                 : 66.67%
+  Valeur Prédictive Positive  : 97.59%
+  Valeur Prédictive Négative  : 80.00%
+  Faux Négatifs (cancers ratés): 9
+  Faux Positifs               : 18
+
+  ✓ Sensibilité ≥ 90% sur la classe maligne — Seuil médical atteint.
+────────────────────────────────────────────────────────────
+
+[✓] Rapport JSON sauvegardé : c:\xampp\htdocs\pulmocare\ai_model\logs\evaluation_finale_evaluation.json
+
+======================================================================
+  ✅ ÉVALUATION TERMINÉE AVEC SUCCÈS
+======================================================================
+
+  📁 Fichiers générés :
+     - c:\xampp\htdocs\pulmocare\ai_model\exports/evaluation_finale_confusion.png
+     - c:\xampp\htdocs\pulmocare\ai_model\exports/evaluation_finale_roc.png
+     - c:\xampp\htdocs\pulmocare\ai_model\exports/evaluation_finale_learning.png
+     - c:\xampp\htdocs\pulmocare\ai_model\logs/evaluation_finale_evaluation.json
+
+  📊 Résultats principaux :
+     - Accuracy  : 95.83%
+     - Sensibilité (cancer détecté) : 98.78%
+     - AUC macro : 0.9739
+
+  ✓ Sensibilité ≥ 90% - Seuil médical atteint
+
+======================================================================
+
+
+
+
+

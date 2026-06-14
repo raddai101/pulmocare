@@ -525,3 +525,145 @@ def afficher_bilan(metriques: dict):
         print(f"\n  ✓ Sensibilité ≥ 90% sur la classe maligne — Seuil médical atteint.")
 
     print(sep)
+
+
+if __name__ == '__main__':
+    """
+    ÉVALUATION COMPLÈTE DU MODÈLE CNN - CANCER DU POUMON
+    
+    Ce script charge le modèle entraîné, l'évalue sur les données de test,
+    et génère toutes les métriques et visualisations.
+    """
+    import sys
+    import glob
+    from model_builder import charger_modele
+    
+    print("\n" + "=" * 70)
+    print("  ÉVALUATION DU MODÈLE CNN - CANCER DU POUMON")
+    print("=" * 70)
+    
+    # ── Étape 1 : Vérification du modèle ─────────────────────────────────────
+    from config import MODEL_PATH, LOGS_DIR, EXPORTS_DIR
+    
+    print(f"\n📁 [1/5] Vérification du modèle...")
+    print(f"     Chemin attendu : {MODEL_PATH}")
+    
+    if not os.path.exists(MODEL_PATH):
+        print(f"\n  ❌ ERREUR : Modèle introuvable !")
+        print(f"     Le fichier {MODEL_PATH} n'existe pas.")
+        print(f"     Veuillez d'abord entraîner le modèle avec :")
+        print(f"       python main.py --mode train")
+        print(f"     ou")
+        print(f"       python train_model.py")
+        sys.exit(1)
+    
+    # Taille du modèle
+    taille_mo = os.path.getsize(MODEL_PATH) / (1024 * 1024)
+    print(f"     ✅ Modèle trouvé ({taille_mo:.1f} Mo)")
+    
+    # ── Étape 2 : Chargement du modèle ───────────────────────────────────────
+    print(f"\n📁 [2/5] Chargement du modèle...")
+    
+    try:
+        model = charger_modele(MODEL_PATH)
+        print(f"     ✅ Modèle chargé avec succès")
+        print(f"     Architecture : {model.name}")
+        print(f"     Input shape : {model.input_shape}")
+        print(f"     Output shape : {model.output_shape}")
+    except Exception as e:
+        print(f"  ❌ Erreur lors du chargement : {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    
+    # ── Étape 3 : Chargement des données de test ─────────────────────────────
+    print(f"\n📁 [3/5] Chargement des données de test...")
+    
+    try:
+        from preprocess import charger_donnees_depuis_dossiers
+        flux_train, flux_val, flux_test = charger_donnees_depuis_dossiers()
+        
+        print(f"     ✅ Données chargées")
+        print(f"     - Train      : {flux_train.samples} images")
+        print(f"     - Validation : {flux_val.samples} images")
+        print(f"     - Test       : {flux_test.samples} images")
+        
+        # Distribution des classes dans le test
+        from collections import Counter
+        flux_test.reset()
+        y_test_labels = []
+        for i in range(len(flux_test)):
+            _, y_batch = flux_test[i]
+            y_test_labels.extend(np.argmax(y_batch, axis=1))
+        
+        from config import CLASS_NAMES
+        distribution = Counter(y_test_labels)
+        print(f"     Distribution test :")
+        for idx, count in distribution.items():
+            print(f"       - {CLASS_NAMES[idx]}: {count} images")
+            
+    except Exception as e:
+        print(f"  ❌ Erreur lors du chargement des données : {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    
+    # ── Étape 4 : Recherche de l'historique d'entraînement ──────────────────
+    print(f"\n📁 [4/5] Recherche de l'historique d'entraînement...")
+    
+    fichiers_history = glob.glob(os.path.join(LOGS_DIR, '*_history.json'))
+    history_json = None
+    
+    if fichiers_history:
+        # Prendre le plus récent
+        history_json = max(fichiers_history, key=os.path.getctime)
+        print(f"     ✅ Historique trouvé : {os.path.basename(history_json)}")
+    else:
+        print(f"     ⚠️  Aucun historique trouvé")
+        print(f"        (les courbes d'apprentissage ne seront pas affichées)")
+    
+    # ── Étape 5 : Lancement de l'évaluation complète ─────────────────────────
+    print(f"\n📁 [5/5] Lancement de l'évaluation complète...")
+    print("")
+    
+    try:
+        rapport = rapport_evaluation_complet(
+            model=model,
+            flux_test=flux_test,
+            nom_experience='evaluation_finale',
+            sauvegarder=True,
+            chemin_history_json=history_json
+        )
+    except Exception as e:
+        print(f"  ❌ Erreur pendant l'évaluation : {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    
+    # ── Résumé final ─────────────────────────────────────────────────────────
+    print("\n" + "=" * 70)
+    print("  ✅ ÉVALUATION TERMINÉE AVEC SUCCÈS")
+    print("=" * 70)
+    
+    print(f"\n  📁 Fichiers générés :")
+    print(f"     - {EXPORTS_DIR}/evaluation_finale_confusion.png")
+    print(f"     - {EXPORTS_DIR}/evaluation_finale_roc.png")
+    if history_json:
+        print(f"     - {EXPORTS_DIR}/evaluation_finale_learning.png")
+    print(f"     - {LOGS_DIR}/evaluation_finale_evaluation.json")
+    
+    print(f"\n  📊 Résultats principaux :")
+    print(f"     - Accuracy  : {rapport['metriques']['accuracy']*100:.2f}%")
+    print(f"     - Sensibilité (cancer détecté) : {rapport['metriques']['sensibilite_malignant']*100:.2f}%")
+    print(f"     - AUC macro : {rapport['metriques']['auc_macro']:.4f}")
+    
+    # Alerte si sensibilité trop basse
+    if rapport['metriques']['sensibilite_malignant'] < 0.90:
+        print(f"\n  ⚠️  ATTENTION : Sensibilité < 90%")
+        print(f"     → {rapport['metriques']['faux_negatifs_malignant']} cancers non détectés")
+        print(f"     → Envisagez de ré-entraîner avec plus de données")
+    else:
+        print(f"\n  ✓ Sensibilité ≥ 90% - Seuil médical atteint")
+    
+    print("\n" + "=" * 70)
+

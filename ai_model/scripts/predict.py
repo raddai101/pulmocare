@@ -632,3 +632,10 @@ def predire_lot(
     print(f"\n[Batch] Terminé : {len([r for r in rapports if not r['erreur']])}/"
           f"{total} images analysées avec succès.")
     return rapports
+
+
+
+
+
+
+
