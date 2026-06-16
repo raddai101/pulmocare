@@ -364,3 +364,9 @@ def enregistrer_routes(app: Flask):
     @app.errorhandler(413)
     def request_entity_too_large(e):
         return reponse_erreur("Fichier trop volumineux (max 50 Mo).", code=413)
+    
+    
+if __name__ == '__main__':
+    app = creer_application()
+    app.run(host='0.0.0.0', port=5000, debug=True)
+

@@ -634,7 +634,72 @@ def predire_lot(
     return rapports
 
 
+# =============================================================================
+# 6. Point d'entrée pour test direct
+# =============================================================================
 
+if __name__ == '__main__':
+    """
+    Mode test : exécute une prédiction sur une image exemple.
+    """
+    import sys
+    from pathlib import Path
+    
+    # Configuration pour le test
+    MODEL_PATH_TEST = "models/cnn_lung_cancer.keras"
+    
+    print("=" * 70)
+    print("  MODE TEST - predict.py")
+    print("=" * 70)
+    
+    # Chercher le modèle
+    projet_root = Path(__file__).parent.parent.parent
+    model_path = projet_root / "ai_model" / "model" / "cnn_model.h5"
+    
+    if not model_path.exists():
+        print(f"❌ Modèle introuvable : {model_path}")
+        print("   Vérifie le chemin du modèle dans config.py")
+        sys.exit(1)
+    
+    # Vérifier si un chemin d'image est fourni en argument
+    if len(sys.argv) > 1:
+        chemin_image = sys.argv[1]
+    else:
+        # Chercher une image de test dans assets/uploads
+        test_images = list(projet_root.glob("assets/uploads/scans/*.jpg")) + \
+                      list(projet_root.glob("assets/uploads/scans/*.png"))
+        
+        if test_images:
+            chemin_image = str(test_images[0])
+            print(f"Image trouvée automatiquement : {chemin_image}")
+        else:
+            print("❌ Aucune image fournie et aucune image trouvée dans assets/uploads/scans/")
+            print("Utilisation : python predict.py <chemin_image>")
+            sys.exit(1)
+    
+    # Vérifier que le fichier existe
+    if not os.path.exists(chemin_image):
+        print(f"❌ Image introuvable : {chemin_image}")
+        sys.exit(1)
+    
+    # Charger le modèle
+    print(f"\n[1] Chargement du modèle : {model_path}")
+    try:
+        modele = charger_modele(str(model_path))
+        print("    ✓ Modèle chargé")
+    except Exception as e:
+        print(f"    ❌ Erreur : {e}")
+        sys.exit(1)
+    
+    # Effectuer le diagnostic
+    print(f"\n[2] Diagnostic de : {chemin_image}")
+    try:
+        rapport = diagnostiquer(chemin_image, modele)
+        afficher_rapport(rapport)
+    except Exception as e:
+        print(f"❌ Erreur lors du diagnostic : {e}")
+        import traceback
+        traceback.print_exc()
 
 
 
