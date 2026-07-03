@@ -515,7 +515,8 @@ function scan_upload(array $file, int $userId): array
     $ext       = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $hash      = scan_compute_hash($file['tmp_name']);
     $filename  = scan_generate_filename($userId, $ext);
-    $uploadDir = __DIR__ . '/../../../assets/uploads/scans/' . date('Y/m/') . $userId . '/';
+    $projectRoot = dirname(__DIR__, 2);
+    $uploadDir = $projectRoot . '/assets/uploads/scans/' . date('Y/m/') . $userId . '/';
 
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
@@ -548,7 +549,7 @@ function scan_upload(array $file, int $userId): array
  */
 function scan_delete_file(string $relativePath): bool
 {
-    $fullPath = __DIR__ . '/../../../' . ltrim($relativePath, '/');
+    $fullPath = dirname(__DIR__, 2) . '/' . ltrim($relativePath, '/');
     if (file_exists($fullPath) && is_file($fullPath)) {
         return unlink($fullPath);
     }
@@ -560,7 +561,12 @@ function scan_delete_file(string $relativePath): bool
  */
 function scan_get_url(string $relativePath): string
 {
-    return env('APP_URL', '') . $relativePath;
+    $path = '/' . ltrim($relativePath, '/');
+    $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
+    if ($appPath && $appPath !== '/' && !str_starts_with($path, rtrim($appPath, '/') . '/')) {
+        return rtrim($appPath, '/') . $path;
+    }
+    return $path;
 }
 
 /**
@@ -623,7 +629,12 @@ function ai_call_python(string $imagePath): ?string
         return ai_call_flask_api($imagePath);
     }
 
-    return ai_call_exec($imagePath);
+    $response = ai_call_exec($imagePath);
+    if ($response !== null) {
+        return $response;
+    }
+
+    return ai_call_flask_api($imagePath);
 }
 
 /**
@@ -632,7 +643,7 @@ function ai_call_python(string $imagePath): ?string
 function ai_call_exec(string $imagePath): ?string
 {
     $pythonBin = env('PYTHON_BIN', 'python3');
-    $scriptPath = escapeshellarg(__DIR__ . '/../../../ai_model/scripts/predict.py');
+    $scriptPath = escapeshellarg(dirname(__DIR__, 2) . '/ai_model/scripts/predict.py');
     $imageArg   = escapeshellarg($imagePath);
     $command    = "{$pythonBin} {$scriptPath} --image {$imageArg} 2>&1";
 
@@ -655,6 +666,11 @@ function ai_call_flask_api(string $imagePath): ?string
 {
     $apiUrl = env('AI_API_URL', 'http://localhost:5000/predict');
 
+    if (!function_exists('curl_init')) {
+        log_error('ai_flask_unavailable', ['reason' => 'extension_curl_missing']);
+        return null;
+    }
+
     $ch = curl_init($apiUrl);
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
@@ -671,7 +687,11 @@ function ai_call_flask_api(string $imagePath): ?string
     curl_close($ch);
 
     if ($curlErr || $httpCode !== 200) {
-        log_error('ai_flask_failed', ['http_code' => $httpCode, 'curl_error' => $curlErr]);
+        log_error('ai_flask_failed', [
+            'http_code' => $httpCode,
+            'curl_error' => $curlErr,
+            'response' => is_string($response) ? substr($response, 0, 600) : null,
+        ]);
         return null;
     }
 
@@ -685,7 +705,16 @@ function ai_parse_response(string $raw): ?array
 {
     $data = json_decode(trim($raw), true);
 
-    if (json_last_error() !== JSON_ERROR_NONE || !isset($data['result_type'])) {
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        log_error('ai_parse_error', ['raw' => substr($raw, 0, 500)]);
+        return null;
+    }
+
+    if (isset($data['donnees']) && is_array($data['donnees'])) {
+        $data = ai_normalize_flask_report($data['donnees']);
+    }
+
+    if (!isset($data['result_type'])) {
         log_error('ai_parse_error', ['raw' => substr($raw, 0, 500)]);
         return null;
     }
@@ -698,6 +727,37 @@ function ai_parse_response(string $raw): ?array
         'model_version'    => $data['model_version']     ?? '1.0',
         'processing_time_ms' => (int)($data['processing_time_ms'] ?? 0),
         'probabilities'    => $data['probabilities']     ?? [],
+    ];
+}
+
+function ai_normalize_flask_report(array $report): array
+{
+    $cnn = $report['niveau1_cnn'] ?? [];
+    $diag = $report['niveau2_diagnostic'] ?? [];
+    $label = strtolower((string)($cnn['classe_predite'] ?? ''));
+    $risk = strtolower((string)($diag['niveau_risque'] ?? ''));
+
+    $resultType = match (true) {
+        str_contains($label, 'malignant'), str_contains($label, 'malin'), str_contains($risk, 'eleve'), str_contains($risk, 'élevé') => 'cancereux',
+        str_contains($label, 'benign'), str_contains($label, 'bénin'), str_contains($risk, 'modere'), str_contains($risk, 'modéré') => 'suspect',
+        str_contains($label, 'normal'), str_contains($risk, 'faible') => 'normal',
+        default => 'suspect',
+    };
+
+    $stageInfo = $diag['stade_tnm'] ?? [];
+    $stage = $stageInfo['numero'] ?? $stageInfo['stade'] ?? null;
+    if (is_string($stage)) {
+        $stage = strtoupper(trim(str_replace('Stade', '', $stage)));
+    }
+
+    return [
+        'result_type' => $resultType,
+        'confidence' => ((float)($cnn['confiance'] ?? 0)) / 100,
+        'stage' => $stage ?: null,
+        'regions' => $report['regions'] ?? [],
+        'model_version' => $report['meta']['version_modele'] ?? '1.0',
+        'processing_time_ms' => $report['meta']['processing_time_ms'] ?? 0,
+        'probabilities' => $cnn['confiances_detail'] ?? [],
     ];
 }
 

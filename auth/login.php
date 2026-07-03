@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result['success']) {
             SessionManager::rotateCsrfToken();
             html_set_flash('success', 'Bienvenue, Dr. ' . $result['user']['prenom'] . ' !');
-            response_redirect('/auth/dashboard.php');
+            response_redirect('/pulmocare/auth/dashboard.php');
         } else {
             $errors[] = $result['message'];
         }

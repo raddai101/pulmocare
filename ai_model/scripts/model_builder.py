@@ -397,7 +397,7 @@ def sauvegarder_poids(model: Model, nom: str = 'checkpoint'):
     model.save_weights(chemin)
     print(f"[OK] Poids sauvegardés : {chemin}")
 
-
+compiler_modele
 def charger_modele(chemin: str = MODEL_PATH) -> Model:
     """
     Charge un modèle Keras depuis un fichier .h5.

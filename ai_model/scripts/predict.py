@@ -543,7 +543,7 @@ def afficher_rapport(rapport: dict):
 
     Paramètres
     ----------
-    rapport : dict
+    rapport : dictF
     """
     sep = "═" * 70
     print(f"\n{sep}")
@@ -646,7 +646,7 @@ if __name__ == '__main__':
     from pathlib import Path
     
     # Configuration pour le test
-    MODEL_PATH_TEST = "models/cnn_lung_cancer.keras"
+    MODEL_PATH_TEST = "models/cnn_lung_cancer.keras*"
     
     print("=" * 70)
     print("  MODE TEST - predict.py")

@@ -11,14 +11,14 @@ $errors     = [];
 $result     = null;
 $detectionId= null;
 
-// ── Traitement upload + prédiction IA ────────────────────────
+// â”€â”€ Traitement upload + prÃ©diction IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!security_verify_csrf($_POST['_token'] ?? '')) {
-        $errors[] = 'Jeton de sécurité invalide. Veuillez réessayer.';
+        $errors[] = 'Jeton de sÃ©curitÃ© invalide. Veuillez rÃ©essayer.';
     } else {
 
-        // 1. Validation des données patient
+        // 1. Validation des donnÃ©es patient
         $patientData = [
             'nom'    => $_POST['patient_nom']    ?? '',
             'prenom' => $_POST['patient_prenom'] ?? '',
@@ -43,14 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. Validation et upload du scan
         if (empty($errors)) {
             if (empty($_FILES['scan_file']['tmp_name'])) {
-                $errors[] = 'Veuillez sélectionner une image CT Scan.';
+                $errors[] = 'Veuillez sÃ©lectionner une image CT Scan.';
             } else {
                 $scanResult = scan_upload($_FILES['scan_file'], $userId);
 
                 if (!$scanResult['success']) {
                     $errors[] = $scanResult['message'];
                 } else {
-                    // 3. Prédiction IA
+                    // 3. PrÃ©diction IA
                     $aiResponse = ai_predict($scanResult['path']);
 
                     if (!$aiResponse['success']) {
@@ -70,12 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $result      = ai_format_result($aiResponse['result']);
 
                             if ($createResult['is_duplicate']) {
-                                html_set_flash('info', 'Ce scan a déjà été analysé. Résultats précédents affichés.');
+                                html_set_flash('info', 'Ce scan a dÃ©jÃ  Ã©tÃ© analysÃ©. RÃ©sultats prÃ©cÃ©dents affichÃ©s.');
                             } else {
                                 log_activity('detection_completed', ['user_id' => $userId, 'detection_id' => $detectionId]);
                             }
                         } else {
-                            $errors[] = 'Erreur lors de la sauvegarde des résultats.';
+                            $errors[] = 'Erreur lors de la sauvegarde des rÃ©sultats.';
                         }
                     }
                 }
@@ -96,6 +96,7 @@ $currentFile = basename(__FILE__);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -108,7 +109,7 @@ $currentFile = basename(__FILE__);
         }
         body { background: var(--bg-base); color: var(--text-1); font-family: 'Inter', sans-serif; display: flex; min-height: 100vh; }
 
-        /* ─ Sidebar reuse (same as dashboard) ─ */
+        /* â”€ Sidebar reuse (same as dashboard) â”€ */
         .sidebar { width: var(--sidebar-w); background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
         .sidebar__logo { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
         .sidebar__logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg,var(--blue-500),var(--indigo)); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 19px; box-shadow: 0 4px 14px var(--blue-glow); }
@@ -127,27 +128,27 @@ $currentFile = basename(__FILE__);
         .sidebar__user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar__user-role { font-size: 11px; color: var(--text-2); }
 
-        /* ─ Main layout ─ */
+        /* â”€ Main layout â”€ */
         .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         .topbar { height: var(--header-h); background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
         .topbar h2 { font-family: 'Space Grotesk',sans-serif; font-size: 19px; font-weight: 600; letter-spacing: -.3px; }
         .topbar p { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
         .content { padding: 32px; flex: 1; max-width: 1000px; }
 
-        /* ─ Alert ─ */
+        /* â”€ Alert â”€ */
         .alert { display: flex; align-items: flex-start; gap: 10px; padding: 14px 18px; border-radius: 10px; font-size: 13.5px; margin-bottom: 20px; }
         .alert--error   { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #f87171; }
         .alert--success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25); color: #4ade80; }
         .alert--info    { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: #60a5fa; }
 
-        /* ─ Form card ─ */
+        /* â”€ Form card â”€ */
         .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
         .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
         .card-header h3 { font-family: 'Space Grotesk',sans-serif; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .card-header p  { font-size: 13px; color: var(--text-2); margin-top: 4px; }
         .card-body { padding: 24px; }
 
-        /* ─ Form grid ─ */
+        /* â”€ Form grid â”€ */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
         .form-full { grid-column: 1 / -1; }
@@ -158,7 +159,7 @@ $currentFile = basename(__FILE__);
         .form-control:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--blue-glow); }
         select.form-control { cursor: pointer; }
 
-        /* ─ Drop zone ─ */
+        /* â”€ Drop zone â”€ */
         .drop-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius);
@@ -189,12 +190,12 @@ $currentFile = basename(__FILE__);
         .file-preview__size { font-size: 12px; color: var(--text-2); margin-top: 2px; }
         .file-preview__remove { color: var(--red); cursor: pointer; background: none; border: none; font-size: 18px; padding: 4px; }
 
-        /* ─ Buttons ─ */
+        /* â”€ Buttons â”€ */
         .btn-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue-500), var(--indigo)); border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity var(--tr), transform var(--tr); box-shadow: 0 4px 20px var(--blue-glow); margin-top: 8px; }
         .btn-submit:hover { opacity: .9; transform: translateY(-1px); }
         .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-        /* ─ RESULT PANEL ─ */
+        /* â”€ RESULT PANEL â”€ */
         .result-panel { display: none; }
         .result-panel.show { display: block; animation: slideUp .4s ease; }
 
@@ -259,7 +260,7 @@ $currentFile = basename(__FILE__);
 <aside class="sidebar">
     <div class="sidebar__logo">
         <div class="sidebar__logo-icon"><i class="fa-solid fa-lungs"></i></div>
-        <div class="sidebar__logo-text">PulmoCare IA<span>v1.0 — Médical</span></div>
+        <div class="sidebar__logo-text">PulmoCare IA<span>v1.0 â€” MÃ©dical</span></div>
     </div>
     <nav class="sidebar__nav">
         <span class="nav-section-label">Principal</span>
@@ -267,14 +268,14 @@ $currentFile = basename(__FILE__);
         <a href="/pulmocare/pages/detection.php" class="nav-link active"><i class="fa-solid fa-magnifying-glass-plus"></i> Nouvelle analyse</a>
         <a href="/pulmocare/pages/resultats.php" class="nav-link"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
         <span class="nav-section-label">Compte</span>
-        <a href="/pulmcare/pages/profil.php" class="nav-link"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
-        <a href="/pulmocare/auth/logout.php" class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+        <a href="/pulmocare/pages/profil.php" class="nav-link"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
+        <a href="/pulmocare/auth/logout.php" class="nav-link" onclick="return confirm('Se dÃ©connecter ?')"><i class="fa-solid fa-right-from-bracket"></i> DÃ©connexion</a>
     </nav>
     <div class="sidebar__user">
         <img src="<?= htmlspecialchars(html_avatar_url($user['avatar'] ?? null)) ?>" alt="Avatar" class="sidebar__avatar">
         <div class="sidebar__user-info">
             <div class="sidebar__user-name">Dr. <?= htmlspecialchars($user['prenom'] . ' ' . $user['nom']) ?></div>
-            <div class="sidebar__user-role"><?= htmlspecialchars($user['specialite'] ?? 'Médecin') ?></div>
+            <div class="sidebar__user-role"><?= htmlspecialchars($user['specialite'] ?? 'MÃ©decin') ?></div>
         </div>
     </div>
 </aside>
@@ -289,6 +290,17 @@ $currentFile = basename(__FILE__);
     </header>
 
     <main class="content">
+
+        <section class="human-strip human-strip--detection">
+            <div class="human-strip__copy">
+                <div class="human-strip__eyebrow">Analyse assistÃ©e</div>
+                <h1>PrÃ©parer un scan lisible, garder le patient au centre.</h1>
+                <p>Ajoutez les informations essentielles, vÃ©rifiez l'aperÃ§u de l'image, puis lancez l'analyse. Le rÃ©sultat reste une aide clinique et doit Ãªtre relu par le mÃ©decin.</p>
+            </div>
+            <div class="human-strip__photo" aria-label="MÃ©decin prÃ©parant un examen">
+                <div class="human-strip__caption">Workflow conÃ§u pour une lecture mÃ©dicale calme, rapide et vÃ©rifiable.</div>
+            </div>
+        </section>
 
         <?= html_flash() ?>
 
@@ -308,7 +320,7 @@ $currentFile = basename(__FILE__);
         <div class="result-panel show" id="resultPanel">
             <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--green)">
                 <i class="fa-solid fa-circle-check"></i>
-                <strong>Analyse terminée avec succès</strong>
+                <strong>Analyse terminÃ©e avec succÃ¨s</strong>
                 <span style="color:var(--text-2);margin-left:auto;font-size:12px">ID #<?= $detectionId ?></span>
             </div>
 
@@ -340,11 +352,11 @@ $currentFile = basename(__FILE__);
                 <!-- Meta -->
                 <div class="result-meta">
                     <div class="meta-item">
-                        <span class="meta-item__label">Stade détecté</span>
+                        <span class="meta-item__label">Stade dÃ©tectÃ©</span>
                         <span class="meta-item__value"><?= htmlspecialchars($result['stage_label']) ?></span>
                     </div>
                     <div class="meta-item">
-                        <span class="meta-item__label">Version modèle</span>
+                        <span class="meta-item__label">Version modÃ¨le</span>
                         <span class="meta-item__value" style="font-size:13px;color:var(--text-2)">CNN v<?= htmlspecialchars($result['model_version']) ?></span>
                     </div>
                     <div class="meta-item">
@@ -352,17 +364,17 @@ $currentFile = basename(__FILE__);
                         <span class="meta-item__value" style="font-size:13px;color:var(--text-2)"><?= number_format((int)$result['processing_time_ms']) ?> ms</span>
                     </div>
                     <div class="meta-item">
-                        <span class="meta-item__label">Patient analysé</span>
+                        <span class="meta-item__label">Patient analysÃ©</span>
                         <span class="meta-item__value" style="font-size:14px">
                             <?= htmlspecialchars(($_POST['patient_prenom'] ?? '') . ' ' . ($_POST['patient_nom'] ?? '')) ?>
                             <?php if (!empty($_POST['patient_age'])): ?>
-                            <span style="color:var(--text-2);font-weight:400;font-size:13px">— <?= (int)$_POST['patient_age'] ?> ans</span>
+                            <span style="color:var(--text-2);font-weight:400;font-size:13px">â€” <?= (int)$_POST['patient_age'] ?> ans</span>
                             <?php endif; ?>
                         </span>
                     </div>
                     <div style="padding:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12.5px;color:#fbbf24;line-height:1.5">
                         <i class="fa-solid fa-triangle-exclamation"></i>
-                        Ce résultat est un outil d'aide au diagnostic. Toute décision médicale doit être prise par un médecin qualifié.
+                        Ce rÃ©sultat est un outil d'aide au diagnostic. Toute dÃ©cision mÃ©dicale doit Ãªtre prise par un mÃ©decin qualifiÃ©.
                     </div>
                 </div>
             </div>
@@ -401,30 +413,30 @@ $currentFile = basename(__FILE__);
                                 value="<?= htmlspecialchars($_POST['patient_nom'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="patient_prenom">Prénom <span class="req">*</span></label>
+                            <label class="form-label" for="patient_prenom">PrÃ©nom <span class="req">*</span></label>
                             <input type="text" id="patient_prenom" name="patient_prenom" class="form-control"
-                                placeholder="Prénom"
+                                placeholder="PrÃ©nom"
                                 value="<?= htmlspecialchars($_POST['patient_prenom'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="patient_age">Âge <span class="req">*</span></label>
+                            <label class="form-label" for="patient_age">Ã‚ge <span class="req">*</span></label>
                             <input type="number" id="patient_age" name="patient_age" class="form-control"
-                                placeholder="Âge en années" min="0" max="120"
+                                placeholder="Ã‚ge en annÃ©es" min="0" max="120"
                                 value="<?= htmlspecialchars($_POST['patient_age'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="patient_sexe">Sexe <span class="req">*</span></label>
                             <select id="patient_sexe" name="patient_sexe" class="form-control" required>
-                                <option value="">— Sélectionner —</option>
+                                <option value="">â€” SÃ©lectionner â€”</option>
                                 <option value="M"   <?= (($_POST['patient_sexe'] ?? '') === 'M')     ? 'selected' : '' ?>>Masculin</option>
-                                <option value="F"   <?= (($_POST['patient_sexe'] ?? '') === 'F')     ? 'selected' : '' ?>>Féminin</option>
+                                <option value="F"   <?= (($_POST['patient_sexe'] ?? '') === 'F')     ? 'selected' : '' ?>>FÃ©minin</option>
                                 <option value="Autre" <?= (($_POST['patient_sexe'] ?? '') === 'Autre') ? 'selected' : '' ?>>Autre</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="patient_code">Code patient</label>
                             <input type="text" id="patient_code" name="patient_code" class="form-control"
-                                placeholder="Code ou numéro dossier (optionnel)"
+                                placeholder="Code ou numÃ©ro dossier (optionnel)"
                                 value="<?= htmlspecialchars($_POST['patient_code'] ?? '') ?>">
                         </div>
                     </div>
@@ -435,21 +447,34 @@ $currentFile = basename(__FILE__);
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fa-solid fa-x-ray" style="color:var(--indigo)"></i> Image CT Scan</h3>
-                    <p>Formats acceptés : JPG, PNG, DICOM, TIFF — Taille max : 20 Mo</p>
+                    <p>Formats acceptÃ©s : JPG, PNG, DICOM, TIFF â€” Taille max : 20 Mo</p>
                 </div>
                 <div class="card-body">
                     <div class="drop-zone" id="dropZone">
                         <input type="file" name="scan_file" id="scanFile" accept=".jpg,.jpeg,.png,.dcm,.tiff,.tif" required>
                         <div id="dropDefault">
                             <div class="drop-zone__icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                            <div class="drop-zone__title">Glissez l'image ici ou cliquez pour sélectionner</div>
-                            <div class="drop-zone__subtitle">CT Scan thoracique — Vue axiale recommandée</div>
-                            <div class="drop-zone__info">JPG · PNG · DICOM · TIFF &nbsp;|&nbsp; Max 20 Mo</div>
+                            <div class="drop-zone__title">Glissez l'image ici ou cliquez pour sÃ©lectionner</div>
+                            <div class="drop-zone__subtitle">CT Scan thoracique â€” Vue axiale recommandÃ©e</div>
+                            <div class="drop-zone__info">JPG Â· PNG Â· DICOM Â· TIFF &nbsp;|&nbsp; Max 20 Mo</div>
+                        </div>
+                        <div class="drop-zone__scan-preview" id="scanPreviewInZone" aria-live="polite">
+                            <img id="scanPreviewImg" src="" alt="Aperçu du scan sélectionné">
+                            <div class="drop-zone__scan-meta">
+                                <i class="fa-solid fa-file-medical" style="color:var(--blue-500)"></i>
+                                <div style="min-width:0;flex:1">
+                                    <strong id="scanPreviewName"></strong>
+                                    <span id="scanPreviewSize"></span>
+                                </div>
+                                <button type="button" class="file-preview__remove" id="removeFileInZone" title="Supprimer">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div class="file-preview" id="filePreview">
-                        <img id="previewImg" src="" alt="Aperçu scan">
+                        <img id="previewImg" src="" alt="AperÃ§u scan">
                         <div class="file-preview__info">
                             <div class="file-preview__name" id="previewName"></div>
                             <div class="file-preview__size" id="previewSize"></div>
@@ -475,15 +500,20 @@ $currentFile = basename(__FILE__);
 
 <script>
 (function() {
-    const dropZone   = document.getElementById('dropZone');
-    const fileInput  = document.getElementById('scanFile');
-    const preview    = document.getElementById('filePreview');
-    const previewImg = document.getElementById('previewImg');
-    const previewName= document.getElementById('previewName');
-    const previewSize= document.getElementById('previewSize');
-    const removeBtn  = document.getElementById('removeFile');
-    const submitBtn  = document.getElementById('submitBtn');
-    const form       = document.getElementById('detectionForm');
+    const dropZone          = document.getElementById('dropZone');
+    const fileInput         = document.getElementById('scanFile');
+    const preview           = document.getElementById('filePreview');
+    const previewImg        = document.getElementById('previewImg');
+    const previewName       = document.getElementById('previewName');
+    const previewSize       = document.getElementById('previewSize');
+    const scanPreviewInZone = document.getElementById('scanPreviewInZone');
+    const scanPreviewImg    = document.getElementById('scanPreviewImg');
+    const scanPreviewName   = document.getElementById('scanPreviewName');
+    const scanPreviewSize   = document.getElementById('scanPreviewSize');
+    const removeBtn         = document.getElementById('removeFile');
+    const removeBtnInZone   = document.getElementById('removeFileInZone');
+    const submitBtn         = document.getElementById('submitBtn');
+    const form              = document.getElementById('detectionForm');
 
     if (!dropZone) return;
 
@@ -495,25 +525,37 @@ $currentFile = basename(__FILE__);
     function showPreview(file) {
         previewName.textContent = file.name;
         previewSize.textContent = formatSize(file.size);
+        if (scanPreviewName) scanPreviewName.textContent = file.name;
+        if (scanPreviewSize) scanPreviewSize.textContent = formatSize(file.size);
         dropZone.classList.add('has-file');
 
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = e => { previewImg.src = e.target.result; };
+            reader.onload = e => {
+                if (previewImg) previewImg.src = e.target.result;
+                if (scanPreviewImg) scanPreviewImg.src = e.target.result;
+                if (previewImg) previewImg.style.display = 'block';
+            };
             reader.readAsDataURL(file);
         } else {
-            previewImg.src = '';
-            previewImg.style.display = 'none';
+            if (previewImg) previewImg.src = '';
+            if (previewImg) previewImg.style.display = 'none';
+            if (scanPreviewImg) scanPreviewImg.src = '';
         }
 
         preview.classList.add('show');
+        if (scanPreviewInZone) scanPreviewInZone.style.display = 'block';
     }
 
     function clearFile() {
-        fileInput.value = '';
+        if (fileInput) fileInput.value = '';
         preview.classList.remove('show');
         dropZone.classList.remove('has-file');
-        previewImg.style.display = 'block';
+        if (previewImg) previewImg.style.display = 'none';
+        if (scanPreviewImg) scanPreviewImg.src = '';
+        if (scanPreviewName) scanPreviewName.textContent = '';
+        if (scanPreviewSize) scanPreviewSize.textContent = '';
+        if (scanPreviewInZone) scanPreviewInZone.style.display = 'none';
     }
 
     fileInput.addEventListener('change', () => {
@@ -521,6 +563,7 @@ $currentFile = basename(__FILE__);
     });
 
     removeBtn?.addEventListener('click', clearFile);
+    removeBtnInZone?.addEventListener('click', clearFile);
 
     // Drag & drop
     ['dragenter', 'dragover'].forEach(e => {
@@ -534,15 +577,16 @@ $currentFile = basename(__FILE__);
         if (file) {
             const dt = new DataTransfer();
             dt.items.add(file);
-            fileInput.files = dt.files;
+            if (fileInput) fileInput.files = dt.files;
             showPreview(file);
         }
     });
 
     // Loading state
     form?.addEventListener('submit', () => {
-        submitBtn.disabled = true;
-        document.getElementById('btnText').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyse en cours…';
+        if (submitBtn) submitBtn.disabled = true;
+        const btnText = document.getElementById('btnText');
+        if (btnText) btnText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyse en cours…';
     });
 })();
 </script>

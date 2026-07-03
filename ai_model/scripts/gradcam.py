@@ -505,3 +505,137 @@ def _style_ax(ax, couleur_fond: str):
     ax.set_facecolor(couleur_fond)
     for spine in ax.spines.values():
         spine.set_edgecolor('#30363d')
+
+
+# =============================================================================
+# 7. Point d'entrée principal
+# =============================================================================
+
+if __name__ == "__main__":
+    """
+    Exécution directe du fichier gradcam.py
+    Permet de tester Grad-CAM sur une image CT Scan avec le modèle entraîné.
+    """
+    print("=" * 70)
+    print("  GRAD-CAM — Visualisation des Activations CNN")
+    print("  CT Scan Pulmonaire - Analyse de Localisation")
+    print("=" * 70)
+    
+    # --- Étape 1 : Charger le modèle ---
+    from model_builder import charger_modele
+    import os
+    
+    MODELE_PATH = "models/cnn_lung_cancer_final.h5"
+    
+    if not os.path.exists(MODELE_PATH):
+        print(f"\n[ERREUR] Modèle introuvable : {MODELE_PATH}")
+        print("Veuillez d'abord entraîner le modèle avec train.py")
+        exit(1)
+    
+    print(f"\n[1] Chargement du modèle : {MODELE_PATH}")
+    try:
+        model = charger_modele(MODELE_PATH)
+        print("    ✓ Modèle chargé avec succès")
+    except Exception as e:
+        print(f"    ✗ Erreur : {e}")
+        exit(1)
+    
+    # --- Étape 2 : Choisir une image de test ---
+    from config import DATA_DIR
+    
+    # Rechercher des images CT dans le dataset
+    image_test = None
+    image_dir = os.path.join(DATA_DIR, "train", "malignant")
+    
+    if os.path.exists(image_dir):
+        images = [f for f in os.listdir(image_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        if images:
+            image_test = os.path.join(image_dir, images[0])
+            print(f"\n[2] Image de test sélectionnée : {os.path.basename(image_test)}")
+        else:
+            # Fallback : chercher ailleurs
+            for split in ['train', 'val', 'test']:
+                for cls in ['malignant', 'benign']:
+                    path = os.path.join(DATA_DIR, split, cls)
+                    if os.path.exists(path):
+                        images = [f for f in os.listdir(path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+                        if images:
+                            image_test = os.path.join(path, images[0])
+                            print(f"\n[2] Image de test sélectionnée : {os.path.basename(image_test)}")
+                            break
+                if image_test:
+                    break
+    
+    if not image_test:
+        print("\n[ERREUR] Aucune image CT trouvée dans DATA_DIR")
+        print("Veuillez placer des images CT dans le dossier data/")
+        exit(1)
+    
+    # --- Étape 3 : Exécuter la prédiction et Grad-CAM ---
+    print("\n[3] Analyse de l'image par le modèle...")
+    
+    # Importer les fonctions de prédiction
+    from predict import (
+        charger_modele as load_model,
+        predire_image,
+        diagnostiquer
+    )
+    
+    # Prédiction
+    predictions = predire_image(model, image_test)
+    
+    # Diagnostic complet
+    rapport = diagnostiquer(predictions, image_test)
+    
+    # Afficher le résumé
+    print("\n" + "=" * 70)
+    print("  RÉSULTATS DU DIAGNOSTIC")
+    print("=" * 70)
+    print(f"Image            : {rapport['meta']['image']}")
+    print(f"Classe prédite   : {rapport['niveau1_cnn']['classe_predite'].upper()}")
+    print(f"Confiance        : {rapport['niveau1_cnn']['confiance']}%")
+    print(f"Niveau de risque : {rapport['niveau2_diagnostic']['niveau_risque'].upper()}")
+    print(f"Stade TNM        : {rapport['niveau2_diagnostic']['stade_tnm']['label']}")
+    print("=" * 70)
+    
+    # --- Étape 4 : Générer Grad-CAM ---
+    print("\n[4] Génération de la visualisation Grad-CAM...")
+    
+    # Déterminer la classe cible (maligne ou bénigne)
+    classe_idx = 1 if rapport['niveau1_cnn']['classe_predite'] == 'malignant' else 0
+    
+    # Calculer Grad-CAM
+    gradcam_result = gradcam_complet(
+        model=model,
+        chemin_image=image_test,
+        classe_idx=classe_idx,
+        alpha=0.5
+    )
+    
+    print("    ✓ Grad-CAM calculé")
+    print(f"    ✓ Localisation : {gradcam_result['localisation']['localisation']}")
+    print(f"    ✓ Confiance localisation : {gradcam_result['localisation']['confiance_loc']*100:.0f}%")
+    
+    # --- Étape 5 : Visualiser et exporter ---
+    print("\n[5] Génération de la figure...")
+    
+    # Créer le dossier d'export
+    os.makedirs(EXPORTS_DIR, exist_ok=True)
+    
+    # Visualisation complète
+    chemin_fig = visualiser_gradcam(
+        gradcam_result=gradcam_result,
+        rapport_diagnostic=rapport,
+        sauvegarder=True
+    )
+    
+    # Exporter la superposition seule (pour l'interface)
+    chemin_superposition = os.path.join(EXPORTS_DIR, 'superposition_latest.png')
+    exporter_superposition(gradcam_result, chemin_superposition)
+    
+    print("\n" + "=" * 70)
+    print("  ANALYSE GRAD-CAM TERMINÉE")
+    print("=" * 70)
+    print(f"📊 Figure complète : {chemin_fig}")
+    print(f"🖼️  Superposition   : {chemin_superposition}")
+    print("\nLes visualisations sont prêtes à être intégrées dans l'interface.")
