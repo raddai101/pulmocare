@@ -455,6 +455,12 @@ function user_update_avatar(int $userId, array $file): array
     $userModel = new User();
     $userModel->updateAvatar($userId, '/assets/uploads/avatars/' . $filename);
 
+    // Mettre à jour la session pour refléter le nouvel avatar immédiatement
+    $updated = $userModel->findById($userId);
+    if ($updated) {
+        SessionManager::setUser($updated);
+    }
+
     return ['success' => true, 'message' => 'Avatar mis à jour.', 'avatar' => '/assets/uploads/avatars/' . $filename];
 }
 
@@ -995,6 +1001,15 @@ function response_json_error(string $message, int $status = 400, array $errors =
 
 function response_redirect(string $url, int $status = 302): never
 {
+    // Normalise le chemin en présence d'un APP_URL avec un path (ex: http://localhost/pulmocare)
+    $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
+    if ($appPath && str_starts_with($url, '/')) {
+        $normalizedAppPath = rtrim($appPath, '/');
+        if ($normalizedAppPath !== '' && !str_starts_with($url, $normalizedAppPath . '/')) {
+            $url = $normalizedAppPath . $url;
+        }
+    }
+
     header("Location: {$url}", true, $status);
     exit;
 }
@@ -1058,8 +1073,12 @@ function html_active_class(string $page, string $current, string $class = 'activ
 
 function html_avatar_url(?string $avatar): string
 {
-    if ($avatar && file_exists(__DIR__ . '/../../../' . ltrim($avatar, '/'))) {
-        return $avatar;
+    if ($avatar) {
+        $projectRoot = dirname(__DIR__, 2); // c:/xampp/htdocs/pulmocare
+        $fullPath = $projectRoot . '/' . ltrim($avatar, '/');
+        if (file_exists($fullPath)) {
+            return $avatar;
+        }
     }
     return '/assets/images/default-avatar.svg';
 }

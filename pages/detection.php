@@ -7,9 +7,10 @@ auth_require('medecin');
 $user   = auth_current_user();
 $userId = (int)$user['id'];
 
-$errors     = [];
-$result     = null;
-$detectionId= null;
+$errors          = [];
+$result          = null;
+$detectionId     = null;
+$uploadedImageUrl = null;
 
 // â”€â”€ Traitement upload + prÃ©diction IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -69,7 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $detectionId = $createResult['detection_id'];
                             $result      = ai_format_result($aiResponse['result']);
 
+                            // déterminer l'URL publique de l'image analysée (nouvelle ou doublon)
+                            if (!empty($scanResult['url'])) {
+                                $uploadedImageUrl = $scanResult['url'];
+                            }
+
                             if ($createResult['is_duplicate']) {
+                                // si doublon, récupérer l'enregistrement existant pour obtenir le chemin image
+                                $existing = detection_get((int)$createResult['detection_id']);
+                                if ($existing && !empty($existing['image_path'])) {
+                                    $uploadedImageUrl = $existing['image_path'];
+                                }
                                 html_set_flash('info', 'Ce scan a dÃ©jÃ  Ã©tÃ© analysÃ©. RÃ©sultats prÃ©cÃ©dents affichÃ©s.');
                             } else {
                                 log_activity('detection_completed', ['user_id' => $userId, 'detection_id' => $detectionId]);
@@ -96,7 +107,7 @@ $currentFile = basename(__FILE__);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
+    <!-- util: garder le style global (inline) — suppression de la feuille claire spécifique -->
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -324,6 +335,12 @@ $currentFile = basename(__FILE__);
                 <span style="color:var(--text-2);margin-left:auto;font-size:12px">ID #<?= $detectionId ?></span>
             </div>
 
+            <?php if (!empty($uploadedImageUrl)): ?>
+            <div style="margin-bottom:14px;text-align:center">
+                <img src="<?= htmlspecialchars(scan_get_url($uploadedImageUrl)) ?>" alt="Scan uploadé" style="max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.35)">
+            </div>
+            <?php endif; ?>
+
             <div class="result-main">
                 <!-- Verdict -->
                 <div class="result-verdict">
@@ -532,9 +549,16 @@ $currentFile = basename(__FILE__);
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = e => {
-                if (previewImg) previewImg.src = e.target.result;
-                if (scanPreviewImg) scanPreviewImg.src = e.target.result;
-                if (previewImg) previewImg.style.display = 'block';
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                }
+                if (scanPreviewImg) {
+                    scanPreviewImg.src = e.target.result;
+                    scanPreviewImg.style.display = 'block';
+                    scanPreviewImg.style.maxWidth = '100%';
+                    scanPreviewImg.style.height = 'auto';
+                }
             };
             reader.readAsDataURL(file);
         } else {

@@ -125,6 +125,6 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-
   </script>
   <?php endif; ?>
 
-  <a href="/auth/login.php" class="back-link"><i class="fa-solid fa-arrow-left"></i> Retour à la connexion</a>
+  <a href="/pulmocare/auth/login.php" class="back-link"><i class="fa-solid fa-arrow-left"></i> Retour à la connexion</a>
 </div>
 </body></html>
