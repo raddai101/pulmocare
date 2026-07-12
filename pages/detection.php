@@ -11,6 +11,7 @@ $errors          = [];
 $result          = null;
 $detectionId     = null;
 $uploadedImageUrl = null;
+$uploadedGradcamUrl = null;
 
 // â”€â”€ Traitement upload + prÃ©diction IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -75,6 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $uploadedImageUrl = $scanResult['url'];
                             }
 
+                            // récupérer l'eventuel gradcam sauvegardé
+                            $existing = detection_get((int)$detectionId);
+                            if ($existing && !empty($existing['gradcam_path'])) {
+                                $uploadedGradcamUrl = $existing['gradcam_path'];
+                            }
+
                             if ($createResult['is_duplicate']) {
                                 // si doublon, récupérer l'enregistrement existant pour obtenir le chemin image
                                 $existing = detection_get((int)$createResult['detection_id']);
@@ -107,6 +114,8 @@ $currentFile = basename(__FILE__);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/style.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
     <!-- util: garder le style global (inline) — suppression de la feuille claire spécifique -->
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -271,7 +280,7 @@ $currentFile = basename(__FILE__);
 <aside class="sidebar">
     <div class="sidebar__logo">
         <div class="sidebar__logo-icon"><i class="fa-solid fa-lungs"></i></div>
-        <div class="sidebar__logo-text">PulmoCare IA<span>v1.0 â€” MÃ©dical</span></div>
+        <div class="sidebar__logo-text">PulmoCare IA<span>v1.0  Médical</span></div>
     </div>
     <nav class="sidebar__nav">
         <span class="nav-section-label">Principal</span>
@@ -304,12 +313,12 @@ $currentFile = basename(__FILE__);
 
         <section class="human-strip human-strip--detection">
             <div class="human-strip__copy">
-                <div class="human-strip__eyebrow">Analyse assistÃ©e</div>
-                <h1>PrÃ©parer un scan lisible, garder le patient au centre.</h1>
-                <p>Ajoutez les informations essentielles, vÃ©rifiez l'aperÃ§u de l'image, puis lancez l'analyse. Le rÃ©sultat reste une aide clinique et doit Ãªtre relu par le mÃ©decin.</p>
+                <div class="human-strip__eyebrow">Analyse assistée</div>
+                <h1>Preparer un scan lisible, garder le patient au centre.</h1>
+                <p>Ajoutez les informations essentielles, vérifiez l'aperçu de l'image, puis lancez l'analyse. Le résultat reste une aide clinique et doit être relu par le médecin.</p>
             </div>
             <div class="human-strip__photo" aria-label="MÃ©decin prÃ©parant un examen">
-                <div class="human-strip__caption">Workflow conÃ§u pour une lecture mÃ©dicale calme, rapide et vÃ©rifiable.</div>
+                <div class="human-strip__caption">Workflow conçu pour une lecture médicale calme, rapide et vérifiable.</div>
             </div>
         </section>
 
@@ -331,13 +340,20 @@ $currentFile = basename(__FILE__);
         <div class="result-panel show" id="resultPanel">
             <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--green)">
                 <i class="fa-solid fa-circle-check"></i>
-                <strong>Analyse terminÃ©e avec succÃ¨s</strong>
+                <strong>Analyse terminée avec succès</strong>
                 <span style="color:var(--text-2);margin-left:auto;font-size:12px">ID #<?= $detectionId ?></span>
             </div>
 
             <?php if (!empty($uploadedImageUrl)): ?>
             <div style="margin-bottom:14px;text-align:center">
                 <img src="<?= htmlspecialchars(scan_get_url($uploadedImageUrl)) ?>" alt="Scan uploadé" style="max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.35)">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($uploadedGradcamUrl)): ?>
+            <div style="margin-bottom:14px;text-align:center">
+                <img src="<?= htmlspecialchars(scan_get_url($uploadedGradcamUrl)) ?>" alt="Grad-CAM" style="max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.35)">
+                <div style="font-size:13px;color:var(--text-2);margin-top:6px">Carte d'activation Grad-CAM — zones ayant influencé la décision du CNN.</div>
             </div>
             <?php endif; ?>
 
@@ -369,11 +385,11 @@ $currentFile = basename(__FILE__);
                 <!-- Meta -->
                 <div class="result-meta">
                     <div class="meta-item">
-                        <span class="meta-item__label">Stade dÃ©tectÃ©</span>
+                        <span class="meta-item__label">Stade détecté</span>
                         <span class="meta-item__value"><?= htmlspecialchars($result['stage_label']) ?></span>
                     </div>
                     <div class="meta-item">
-                        <span class="meta-item__label">Version modÃ¨le</span>
+                        <span class="meta-item__label">Version modele</span>
                         <span class="meta-item__value" style="font-size:13px;color:var(--text-2)">CNN v<?= htmlspecialchars($result['model_version']) ?></span>
                     </div>
                     <div class="meta-item">
@@ -381,7 +397,7 @@ $currentFile = basename(__FILE__);
                         <span class="meta-item__value" style="font-size:13px;color:var(--text-2)"><?= number_format((int)$result['processing_time_ms']) ?> ms</span>
                     </div>
                     <div class="meta-item">
-                        <span class="meta-item__label">Patient analysÃ©</span>
+                        <span class="meta-item__label">Patient analysé</span>
                         <span class="meta-item__value" style="font-size:14px">
                             <?= htmlspecialchars(($_POST['patient_prenom'] ?? '') . ' ' . ($_POST['patient_nom'] ?? '')) ?>
                             <?php if (!empty($_POST['patient_age'])): ?>
@@ -391,7 +407,7 @@ $currentFile = basename(__FILE__);
                     </div>
                     <div style="padding:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12.5px;color:#fbbf24;line-height:1.5">
                         <i class="fa-solid fa-triangle-exclamation"></i>
-                        Ce rÃ©sultat est un outil d'aide au diagnostic. Toute dÃ©cision mÃ©dicale doit Ãªtre prise par un mÃ©decin qualifiÃ©.
+                        Ce résultat est un outil d'aide au diagnostic. Toute décision médicale doit être prise par un médecin qualifié.
                     </div>
                 </div>
             </div>
@@ -430,23 +446,23 @@ $currentFile = basename(__FILE__);
                                 value="<?= htmlspecialchars($_POST['patient_nom'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="patient_prenom">PrÃ©nom <span class="req">*</span></label>
+                            <label class="form-label" for="patient_prenom">Prénom <span class="req">*</span></label>
                             <input type="text" id="patient_prenom" name="patient_prenom" class="form-control"
-                                placeholder="PrÃ©nom"
+                                placeholder="Prénom"
                                 value="<?= htmlspecialchars($_POST['patient_prenom'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="patient_age">Ã‚ge <span class="req">*</span></label>
+                            <label class="form-label" for="patient_age">Âge <span class="req">*</span></label>
                             <input type="number" id="patient_age" name="patient_age" class="form-control"
-                                placeholder="Ã‚ge en annÃ©es" min="0" max="120"
+                                placeholder="Âge en années" min="0" max="120"
                                 value="<?= htmlspecialchars($_POST['patient_age'] ?? '') ?>" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="patient_sexe">Sexe <span class="req">*</span></label>
                             <select id="patient_sexe" name="patient_sexe" class="form-control" required>
-                                <option value="">â€” SÃ©lectionner â€”</option>
+                                <option value=""> Sélectionner </option>
                                 <option value="M"   <?= (($_POST['patient_sexe'] ?? '') === 'M')     ? 'selected' : '' ?>>Masculin</option>
-                                <option value="F"   <?= (($_POST['patient_sexe'] ?? '') === 'F')     ? 'selected' : '' ?>>FÃ©minin</option>
+                                <option value="F"   <?= (($_POST['patient_sexe'] ?? '') === 'F')     ? 'selected' : '' ?>>Féminin</option>
                                 <option value="Autre" <?= (($_POST['patient_sexe'] ?? '') === 'Autre') ? 'selected' : '' ?>>Autre</option>
                             </select>
                         </div>
@@ -464,19 +480,19 @@ $currentFile = basename(__FILE__);
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fa-solid fa-x-ray" style="color:var(--indigo)"></i> Image CT Scan</h3>
-                    <p>Formats acceptÃ©s : JPG, PNG, DICOM, TIFF â€” Taille max : 20 Mo</p>
+                    <p>Formats acceptés : JPG, PNG, DICOM, TIFF  Taille max : 20 Mo</p>
                 </div>
                 <div class="card-body">
                     <div class="drop-zone" id="dropZone">
-                        <input type="file" name="scan_file" id="scanFile" accept=".jpg,.jpeg,.png,.dcm,.tiff,.tif" required>
+                        <input type="file" name="scan_file" id="scanFile" accept=".jpg,.jpeg,.png,.dcm,.tiff,.tif,.svg" required>
                         <div id="dropDefault">
                             <div class="drop-zone__icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                            <div class="drop-zone__title">Glissez l'image ici ou cliquez pour sÃ©lectionner</div>
-                            <div class="drop-zone__subtitle">CT Scan thoracique â€” Vue axiale recommandÃ©e</div>
-                            <div class="drop-zone__info">JPG Â· PNG Â· DICOM Â· TIFF &nbsp;|&nbsp; Max 20 Mo</div>
+                            <div class="drop-zone__title">Glissez l'image ici ou cliquez pour sélectionner</div>
+                            <div class="drop-zone__subtitle">CT Scan thoracique  Vue axiale recommandée</div>
+                            <div class="drop-zone__info">JPG · PNG · DICOM · TIFF &nbsp;|&nbsp; Max 20 Mo</div>
                         </div>
                         <div class="drop-zone__scan-preview" id="scanPreviewInZone" aria-live="polite">
-                            <img id="scanPreviewImg" src="" alt="Aperçu du scan sélectionné">
+                            <img id="scanPreviewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/CTScan.png')) ?>" alt="Aperçu du scan sélectionné">
                             <div class="drop-zone__scan-meta">
                                 <i class="fa-solid fa-file-medical" style="color:var(--blue-500)"></i>
                                 <div style="min-width:0;flex:1">
@@ -491,7 +507,7 @@ $currentFile = basename(__FILE__);
                     </div>
 
                     <div class="file-preview" id="filePreview">
-                        <img id="previewImg" src="" alt="AperÃ§u scan">
+                        <img id="previewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/scan-placeholder.svg')) ?>" alt="Aperçu scan">
                         <div class="file-preview__info">
                             <div class="file-preview__name" id="previewName"></div>
                             <div class="file-preview__size" id="previewSize"></div>

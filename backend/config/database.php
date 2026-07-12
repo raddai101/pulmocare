@@ -24,8 +24,7 @@ final class Database
     private string $charset;
     private int    $port;
 
-    private function __construct()
-    {
+    private function __construct(){
         $this->host     = $_ENV['DB_HOST']     ?? 'localhost';
         $this->port     = (int)($_ENV['DB_PORT'] ?? 3306);
         $this->dbname   = $_ENV['DB_NAME']     ?? 'cancer_detection';
@@ -79,9 +78,7 @@ final class Database
         return $this->connection;
     }
 
-    /**
-     * Exécute une requête préparée et retourne le statement
-     */
+    
     public function query(string $sql, array $params = []): \PDOStatement
     {
         $stmt = $this->connection->prepare($sql);
@@ -89,35 +86,27 @@ final class Database
         return $stmt;
     }
 
-    /**
-     * Retourne une seule ligne
-     */
+    
     public function fetchOne(string $sql, array $params = []): ?array
     {
         $result = $this->query($sql, $params)->fetch();
         return $result !== false ? $result : null;
     }
 
-    /**
-     * Retourne toutes les lignes
-     */
+    
     public function fetchAll(string $sql, array $params = []): array
     {
         return $this->query($sql, $params)->fetchAll();
     }
 
-    /**
-     * Insère et retourne le dernier ID inséré
-     */
+    
     public function insert(string $sql, array $params = []): string
     {
         $this->query($sql, $params);
         return $this->connection->lastInsertId();
     }
 
-    /**
-     * Execute (UPDATE/DELETE) et retourne le nombre de lignes affectées
-     */
+    
     public function execute(string $sql, array $params = []): int
     {
         return $this->query($sql, $params)->rowCount();

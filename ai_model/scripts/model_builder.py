@@ -38,6 +38,24 @@ from config import (
 )
 
 
+# Compatibility wrapper: accept legacy BatchNormalization kwargs (renorm, renorm_clipping, renorm_momentum)
+class CompatBatchNormalization(tf.keras.layers.BatchNormalization):
+    def __init__(self, *args, **kwargs):
+        # Remove legacy args that may be present in older saved model configs
+        kwargs.pop('renorm', None)
+        kwargs.pop('renorm_clipping', None)
+        kwargs.pop('renorm_momentum', None)
+        super().__init__(*args, **kwargs)
+
+
+# Compatibility wrapper: accept legacy Dense kwargs (quantization_config)
+class CompatDense(tf.keras.layers.Dense):
+    def __init__(self, *args, **kwargs):
+        # Remove legacy/unknown args that may be present in older saved model configs
+        kwargs.pop('quantization_config', None)
+        super().__init__(*args, **kwargs)
+
+
 # =============================================================================
 # 1. Blocs de construction élémentaires
 # =============================================================================
@@ -413,7 +431,18 @@ def charger_modele(chemin: str = MODEL_PATH) -> Model:
     if not os.path.exists(chemin):
         raise FileNotFoundError(f"Modèle introuvable : {chemin}")
 
-    model = tf.keras.models.load_model(chemin)
+    # Load with compatibility for legacy BatchNormalization config
+    try:
+        model = tf.keras.models.load_model(
+            chemin,
+            custom_objects={
+                'BatchNormalization': CompatBatchNormalization,
+                'Dense': CompatDense
+            }
+        )
+    except Exception:
+        # Fallback to default loader if custom_objects failed for some reason
+        model = tf.keras.models.load_model(chemin)
     print(f"[OK] Modèle chargé : {chemin}")
     return model
 

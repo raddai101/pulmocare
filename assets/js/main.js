@@ -34,7 +34,7 @@ const Sidebar = (() => {
         });
     }
 
-    function open()  { sidebar?.classList.add('open'); overlay.style.display = 'block'; }
+    function open() { sidebar?.classList.add('open'); overlay.style.display = 'block'; }
     function close() { sidebar?.classList.remove('open'); overlay.style.display = 'none'; }
 
     return { init, open, close };
@@ -66,13 +66,13 @@ const Alerts = (() => {
 
     function dismiss(el) {
         el.style.transition = 'opacity .35s ease, max-height .35s ease, margin .35s ease';
-        el.style.opacity    = '0';
-        el.style.maxHeight  = el.offsetHeight + 'px';
+        el.style.opacity = '0';
+        el.style.maxHeight = el.offsetHeight + 'px';
         setTimeout(() => {
             el.style.maxHeight = '0';
-            el.style.margin    = '0';
-            el.style.padding   = '0';
-            el.style.border    = '0';
+            el.style.margin = '0';
+            el.style.padding = '0';
+            el.style.border = '0';
         }, 10);
         setTimeout(() => el.remove(), 360);
     }
@@ -133,7 +133,7 @@ const Api = (() => {
         const qs = new URLSearchParams(params).toString();
         const fullUrl = qs ? `${url}?${qs}` : url;
         try {
-            const res  = await fetch(fullUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const res = await fetch(fullUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const json = await res.json();
             return { ok: res.ok, status: res.status, ...json };
         } catch (err) {
@@ -159,7 +159,7 @@ const Forms = (() => {
             const icon = input.closest('.input-group')?.querySelector('.input-group__icon');
             if (!icon) return;
             input.addEventListener('focus', () => icon.style.color = 'var(--blue-500)');
-            input.addEventListener('blur',  () => icon.style.color = '');
+            input.addEventListener('blur', () => icon.style.color = '');
         });
     }
 
@@ -205,7 +205,7 @@ const Forms = (() => {
    MODULE : Modals
    ════════════════════════════════════════════════════════════ */
 const Modal = (() => {
-    function open(id)  { document.getElementById(id)?.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function open(id) { document.getElementById(id)?.classList.add('open'); document.body.style.overflow = 'hidden'; }
     function close(id) { document.getElementById(id)?.classList.remove('open'); document.body.style.overflow = ''; }
 
     function confirm(message, onConfirm, onCancel) {
@@ -239,14 +239,14 @@ const Modal = (() => {
    ════════════════════════════════════════════════════════════ */
 const Utils = (() => {
     function formatBytes(bytes) {
-        if (bytes < 1024)       return bytes + ' o';
-        if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' Ko';
+        if (bytes < 1024) return bytes + ' o';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
         if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' Mo';
         return (bytes / 1073741824).toFixed(2) + ' Go';
     }
 
     function formatDate(dateStr, locale = 'fr-FR') {
-        return new Date(dateStr).toLocaleDateString(locale, { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        return new Date(dateStr).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     function debounce(fn, delay = 300) {
@@ -312,8 +312,8 @@ const TableSort = (() => {
 
     function sortTable(table, colIdx, th) {
         const tbody = table.querySelector('tbody');
-        const rows  = [...tbody.querySelectorAll('tr')];
-        const asc   = th.dataset.sortDir !== 'asc';
+        const rows = [...tbody.querySelectorAll('tr')];
+        const asc = th.dataset.sortDir !== 'asc';
         th.dataset.sortDir = asc ? 'asc' : 'desc';
 
         // Reset other headers
@@ -324,8 +324,8 @@ const TableSort = (() => {
         rows.sort((a, b) => {
             const va = a.cells[colIdx]?.textContent.trim() || '';
             const vb = b.cells[colIdx]?.textContent.trim() || '';
-            const na = parseFloat(va.replace(/[^0-9.-]/g,''));
-            const nb = parseFloat(vb.replace(/[^0-9.-]/g,''));
+            const na = parseFloat(va.replace(/[^0-9.-]/g, ''));
+            const nb = parseFloat(vb.replace(/[^0-9.-]/g, ''));
             if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
             return asc ? va.localeCompare(vb, 'fr') : vb.localeCompare(va, 'fr');
         });
@@ -380,6 +380,17 @@ document.addEventListener('DOMContentLoaded', () => {
     TableSort.init();
     Notifications.init();
     PasswordToggle.init();
+    // Force background blanc quel que soit l'état réseau (préférence utilisateur)
+    try {
+        document.documentElement.style.setProperty('--bg-base', '#ffffff');
+        document.documentElement.style.setProperty('--bg-card', '#ffffff');
+        document.documentElement.style.setProperty('--text-1', '#111827');
+        document.documentElement.style.setProperty('--text-2', '#6b7280');
+        document.body.style.background = '#ffffff';
+        document.body.style.color = '#111827';
+    } catch (e) {
+        console.warn('Theme override failed', e);
+    }
 });
 
 // Exposer globalement pour les pages spécifiques

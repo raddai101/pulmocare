@@ -25,6 +25,8 @@ $pageTitle   = html_page_title('Tableau de bord');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <link rel="stylesheet" href="/pulmocare/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/style.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -402,7 +404,7 @@ $pageTitle   = html_page_title('Tableau de bord');
         <div class="sidebar__logo-icon"><i class="fa-solid fa-lungs"></i></div>
         <div class="sidebar__logo-text">
             PulmoCare IA
-            <span>v1.0 — Médical</span>
+            <span>v1.0  Médical</span>
         </div>
     </div>
 

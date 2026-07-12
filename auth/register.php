@@ -70,9 +70,9 @@ $pageTitle = html_page_title('Inscription');
     <style>
         body { font-family: 'Inter', sans-serif; background:#050a18; color:#f0f4ff; padding:24px; }
         .card { max-width:900px; margin:0 auto; background:#0d1526; padding:28px; border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,.6); }
-        .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         label { display:block; font-size:13px; color:#a8bdde; margin-bottom:6px; }
-        input, select { width:100%; padding:10px 12px; background:#0f2136; border:1px solid rgba(59,130,246,.08); color:#eaf2ff; border-radius:8px; }
+        input, select { width:80%; padding:10px 12px; background:#0f2136; border:1px solid rgba(59,130,246,.08); color:#eaf2ff; border-radius:8px; }
         .btn { background:#3b82f6; color:white; padding:10px 14px; border-radius:8px; border:0; cursor:pointer; }
         .errors { background:#2b1111; color:#ffdada; padding:10px; border-radius:8px; margin-bottom:12px; }
         .success { background:#0b2b16; color:#baf5c6; padding:10px; border-radius:8px; margin-bottom:12px; }
@@ -129,7 +129,7 @@ $pageTitle = html_page_title('Inscription');
                         <option value="">Sélectionnez un hôpital</option>
                         <?php foreach ($hospitals as $h): ?>
                             <option value="<?= (int)$h['id'] ?>" <?= (isset($_POST['hospital_id']) && (int)$_POST['hospital_id'] === (int)$h['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($h['nom'] . ' — ' . ($h['ville'] ?? '')) ?>
+                                <?= htmlspecialchars($h['nom'] . ' / ' . ($h['ville'] ?? '')) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -146,7 +146,7 @@ $pageTitle = html_page_title('Inscription');
 
             <div style="margin-top:18px" class="actions">
                 <button class="btn" type="submit">Créer mon compte</button>
-                <a href="/pulmocare/auth/login.php" style="color:#a8bdde; text-decoration:none;">J'ai déjà un compte</a>
+                <a href="/pulmocare/auth/login.php" style="color:#a8bdde; ">J'ai déjà un compte</a>
             </div>
         </form>
     </div>

@@ -17,6 +17,7 @@ class Detection extends BaseModel
         'image_size', 'image_hash',
         'result_type', 'confidence_score', 'stage',
         'regions_json', 'model_version', 'processing_time_ms',
+        'gradcam_path',
         'notes_medecin', 'is_reviewed', 'status',
     ];
 

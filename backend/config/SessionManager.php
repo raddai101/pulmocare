@@ -105,6 +105,7 @@ final class SessionManager
             'role'       => $userData['role'],
             'specialite' => $userData['specialite'] ?? null,
             'hospital_id'=> $userData['hospital_id'] ?? null,
+            'avatar'     => $userData['avatar'] ?? null,
         ];
         $_SESSION['_auth_time'] = time();
     }

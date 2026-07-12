@@ -45,6 +45,8 @@ $pageTitle = html_page_title('Mon profil');
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/pulmocare/assets/css/style.css">
+<link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg-base:#060d1a;--bg-card:#0b1629;--bg-hover:#0f1e38;--bg-input:#0f1e38;--border:rgba(59,130,246,.14);--border-focus:#3b82f6;--blue-500:#3b82f6;--blue-glow:rgba(59,130,246,.3);--indigo:#6366f1;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--text-1:#e8edf8;--text-2:#7f93b4;--text-3:#4a607a;--radius:12px;--sidebar-w:260px;--header-h:70px;--tr:.22s ease}
@@ -358,8 +360,10 @@ document.getElementById('avatarInput')?.addEventListener('change', function() {
     document.querySelector('.sidebar__avatar').src = e.target.result;
   };
   reader.readAsDataURL(this.files[0]);
-  // Auto-submit avatar form
-  document.getElementById('avatarForm').submit();
+  // Auto-submit avatar form after preview is ready
+  reader.onloadend = () => {
+    document.getElementById('avatarForm').submit();
+  };
 });
 
 // Password strength

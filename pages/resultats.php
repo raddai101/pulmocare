@@ -58,6 +58,8 @@ $currentFile = basename(__FILE__);
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/pulmocare/assets/css/style.css">
+<link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -187,7 +189,7 @@ tbody td:first-child{padding-left:22px}
 <aside class="sidebar">
   <div class="sidebar__logo">
     <div class="sidebar__logo-icon"><i class="fa-solid fa-lungs"></i></div>
-    <div class="sidebar__logo-text">PulmoCare IA<span>v1.0 — Médical</span></div>
+    <div class="sidebar__logo-text">PulmoCare IA<span>v1.0  Médical</span></div>
   </div>
   <nav class="sidebar__nav">
     <span class="nav-section-label">Principal</span>
@@ -238,13 +240,22 @@ tbody td:first-child{padding-left:22px}
       <div>
         <div class="detail-scan-card">
           <img src="<?= htmlspecialchars(scan_get_url($detail['image_path'])) ?>"
-               alt="CT Scan" onerror="this.src='/assets/images/scan-placeholder.svg'">
+            alt="CT Scan" onerror="this.onerror=null;this.src='<?= htmlspecialchars(scan_get_url('/assets/images/scan-placeholder.svg')) ?>'">
           <div class="detail-scan-info">
             <p><strong><?= htmlspecialchars($detail['image_original_name'] ?? 'scan.jpg') ?></strong><br>
               <?php if ($detail['image_size']): ?>Taille : <?= html_format_size((int)$detail['image_size']) ?> &nbsp;·&nbsp;<?php endif; ?>
               Analysé le <?= html_format_date($detail['created_at']) ?></p>
           </div>
         </div>
+        <?php if (!empty($detail['gradcam_path'])): ?>
+        <div class="detail-scan-card" style="margin-top:14px">
+          <img src="<?= htmlspecialchars(scan_get_url($detail['gradcam_path'])) ?>" alt="Zone détectée (Grad-CAM)">
+          <div class="detail-scan-info">
+            <p><i class="fa-solid fa-fire"></i> Carte d'activation Grad-CAM — zones ayant influencé la décision du CNN.</p>
+          </div>
+        </div>
+        <?php endif; ?>
+
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
           <a href="/pulmocare/backend/api/export-pdf.php?id=<?= $detailId ?>" class="btn-secondary" style="justify-content:center">
             <i class="fa-solid fa-file-pdf"></i> Exporter PDF

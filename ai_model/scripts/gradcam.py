@@ -22,7 +22,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from config import (
     IMG_SIZE, CLASS_NAMES, IDX_MALIGNANT,
     GRADCAM_LAYER, GRADCAM_ALPHA, GRADCAM_COLORMAP,
-    EXPORTS_DIR
+    EXPORTS_DIR, MODEL_PATH, WEIGHTS_DIR
 )
 from preprocess import pretraiter_depuis_chemin, pipeline_pretraitement
 
@@ -525,46 +525,86 @@ if __name__ == "__main__":
     from model_builder import charger_modele
     import os
     
-    MODELE_PATH = "models/cnn_lung_cancer_final.h5"
+    # Utiliser le chemin centralisé défini dans config.py
+    MODELE_PATH = MODEL_PATH
     
-    if not os.path.exists(MODELE_PATH):
-        print(f"\n[ERREUR] Modèle introuvable : {MODELE_PATH}")
-        print("Veuillez d'abord entraîner le modèle avec train.py")
-        exit(1)
-    
-    print(f"\n[1] Chargement du modèle : {MODELE_PATH}")
-    try:
-        model = charger_modele(MODELE_PATH)
-        print("    ✓ Modèle chargé avec succès")
-    except Exception as e:
-        print(f"    ✗ Erreur : {e}")
+    model = None
+
+    if os.path.exists(MODELE_PATH):
+        print(f"\n[1] Chargement du modèle complet : {MODELE_PATH}")
+        try:
+            model = charger_modele(MODELE_PATH)
+            print("    ✓ Modèle chargé avec succès")
+        except Exception as e:
+            print(f"    ✗ Erreur lors du chargement du modèle complet : {e}")
+            model = None
+
+    if model is None:
+        # Fallback : si aucun modèle .h5 complet, essayer de charger les derniers poids
+        print(f"\n[1] Modèle complet introuvable, recherche de poids dans : {WEIGHTS_DIR}")
+        if os.path.exists(WEIGHTS_DIR):
+            poids_files = [os.path.join(WEIGHTS_DIR, f) for f in os.listdir(WEIGHTS_DIR) if f.endswith('.weights.h5')]
+            poids_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+            if poids_files:
+                dernier_poids = poids_files[0]
+                print(f"    → Poids trouvés : {os.path.basename(dernier_poids)}")
+                try:
+                    # Construire le modèle et charger les poids
+                    from model_builder import construire_cnn, compiler_modele, charger_poids
+                    model = construire_cnn()
+                    model = compiler_modele(model)
+                    # charger_poids attend le nom sans suffixe '.weights.h5'
+                    nom_poids = os.path.basename(dernier_poids).replace('.weights.h5', '')
+                    charger_poids(model, nom=nom_poids)
+                    print("    ✓ Modèle construit et poids chargés avec succès")
+                except Exception as e:
+                    print(f"    ✗ Erreur lors du chargement des poids : {e}")
+                    model = None
+            else:
+                print("    ✗ Aucun fichier de poids trouvé dans WEIGHTS_DIR")
+        else:
+            print("    ✗ Répertoire WEIGHTS_DIR introuvable")
+
+    if model is None:
+        print(f"\n[ERREUR] Aucun modèle utilisable trouvé (ni MODEL_PATH ni poids).")
+        print("Veuillez entraîner le modèle (générer cnn_model.h5) ou déposer des poids dans model/weights/")
         exit(1)
     
     # --- Étape 2 : Choisir une image de test ---
-    from config import DATA_DIR
+    from config import DATASET_DIR, TRAIN_DIR, VAL_DIR, TEST_DIR
     
     # Rechercher des images CT dans le dataset
     image_test = None
-    image_dir = os.path.join(DATA_DIR, "train", "malignant")
-    
+    # première tentative : dossier TRAIN_DIR / 'malignant'
+    image_dir = os.path.join(TRAIN_DIR, "malignant")
+
     if os.path.exists(image_dir):
-        images = [f for f in os.listdir(image_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        images = [f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         if images:
             image_test = os.path.join(image_dir, images[0])
             print(f"\n[2] Image de test sélectionnée : {os.path.basename(image_test)}")
-        else:
-            # Fallback : chercher ailleurs
-            for split in ['train', 'val', 'test']:
-                for cls in ['malignant', 'benign']:
-                    path = os.path.join(DATA_DIR, split, cls)
+    
+    if not image_test:
+        # Fallback : chercher dans TRAIN/VAL/TEST et les classes communes
+        for base in (TRAIN_DIR, VAL_DIR, TEST_DIR, DATASET_DIR):
+            if not base or not os.path.exists(base):
+                continue
+            for split in ('train', 'validation', 'val', 'test'):
+                for cls in ('malignant', 'malignant case', 'malignant_case', 'benign', 'benign case', 'benign_case'):
+                    path = os.path.join(base, split, cls)
+                    if not os.path.exists(path):
+                        # certain dataset structures use lowercase class names without spaces
+                        path = os.path.join(base, split, cls.split()[0])
                     if os.path.exists(path):
-                        images = [f for f in os.listdir(path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+                        images = [f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
                         if images:
                             image_test = os.path.join(path, images[0])
                             print(f"\n[2] Image de test sélectionnée : {os.path.basename(image_test)}")
                             break
                 if image_test:
                     break
+            if image_test:
+                break
     
     if not image_test:
         print("\n[ERREUR] Aucune image CT trouvée dans DATA_DIR")
@@ -574,18 +614,17 @@ if __name__ == "__main__":
     # --- Étape 3 : Exécuter la prédiction et Grad-CAM ---
     print("\n[3] Analyse de l'image par le modèle...")
     
-    # Importer les fonctions de prédiction
+    # Importer les fonctions de prédiction (noms définis dans predict.py)
     from predict import (
-        charger_modele as load_model,
-        predire_image,
-        diagnostiquer
+        diagnostiquer,
+        predire_depuis_chemin
     )
-    
-    # Prédiction
-    predictions = predire_image(model, image_test)
-    
-    # Diagnostic complet
-    rapport = diagnostiquer(predictions, image_test)
+
+    # Prédiction et diagnostic complet
+    # predire_depuis_chemin retourne le résultat Niveau 1, mais nous utilisons
+    # directement la fonction d'orchestration `diagnostiquer` qui effectue
+    # Niveau 1 + Niveau 2 et retourne le rapport complet.
+    rapport = diagnostiquer(image_test, model)
     
     # Afficher le résumé
     print("\n" + "=" * 70)
@@ -602,7 +641,9 @@ if __name__ == "__main__":
     print("\n[4] Génération de la visualisation Grad-CAM...")
     
     # Déterminer la classe cible (maligne ou bénigne)
-    classe_idx = 1 if rapport['niveau1_cnn']['classe_predite'] == 'malignant' else 0
+    # déterminer l'index cible à partir du label retourné (tolérance aux variantes)
+    classe_label = rapport['niveau1_cnn']['classe_predite'].lower()
+    classe_idx = IDX_MALIGNANT if 'malignant' in classe_label or 'maligne' in classe_label else 0
     
     # Calculer Grad-CAM
     gradcam_result = gradcam_complet(

@@ -702,5 +702,44 @@ if __name__ == '__main__':
         traceback.print_exc()
 
 
+# -----------------------------------------------------------------------------
+# Compatibilité API (wrappers simples pour flask_api copy.py)
+# -----------------------------------------------------------------------------
+MODEL_VERSION = '1.0'
+
+_MODEL_SINGLETON = None
+
+def _get_model_singleton():
+    global _MODEL_SINGLETON
+    if _MODEL_SINGLETON is None:
+        _MODEL_SINGLETON = charger_modele(MODEL_PATH)
+    return _MODEL_SINGLETON
+
+
+def predict(chemin_image: str, localisation: str = 'variable') -> dict:
+    """Wrapper simple : charge le modèle (si nécessaire) et retourne
+    un objet JSON-compatible avec la clé `donnees` comme attendu
+    par le reste de l'application PHP/Flask plus ancien.
+    """
+    modele = _get_model_singleton()
+    rapport = diagnostiquer(chemin_image, modele, localisation)
+    return {
+        'statut': 'succes',
+        'horodatage': datetime.now().isoformat(),
+        'donnees': rapport,
+    }
+
+
+def predict_demo(chemin_image: str) -> dict:
+    """Retourne une réponse de démonstration (sans TensorFlow)."""
+    # Générer un rapport factice minimal
+    rapport = {
+        'meta': {'image': os.path.basename(chemin_image), 'horodatage': datetime.now().isoformat(), 'version_modele': MODEL_VERSION},
+        'niveau1_cnn': {'classe_predite': 'normal', 'classe_idx': 0, 'confiance': 98.7, 'confiances_detail': {'normal': 98.7, 'begnin case': 0.8, 'malignant case': 0.5}},
+        'niveau2_diagnostic': {'niveau_risque': 'faible', 'couleur_risque': COULEURS_RISQUE['faible'], 'localisation': LOCALISATIONS['variable'], 'stade_tnm': STADES_TNM[0], 'type_histologique': {}, 'recommandations': ['Aucune anomalie détectée.']}
+    }
+    return {'statut': 'succes', 'horodatage': datetime.now().isoformat(), 'donnees': rapport}
+
+
 
 

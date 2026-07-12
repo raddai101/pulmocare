@@ -670,7 +670,8 @@ function ai_call_exec(string $imagePath): ?string
  */
 function ai_call_flask_api(string $imagePath): ?string
 {
-    $apiUrl = env('AI_API_URL', 'http://localhost:5000/predict');
+    // Use gradcam endpoint by default to receive heatmap + metadata
+    $apiUrl = env('AI_API_URL', 'http://localhost:5000/predict/gradcam');
 
     if (!function_exists('curl_init')) {
         log_error('ai_flask_unavailable', ['reason' => 'extension_curl_missing']);
@@ -680,7 +681,10 @@ function ai_call_flask_api(string $imagePath): ?string
     $ch = curl_init($apiUrl);
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => ['image' => new CURLFile($imagePath)],
+        CURLOPT_POSTFIELDS     => [
+            'image'        => new CURLFile($imagePath),
+            'localisation' => 'variable',
+        ],
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 60,
         CURLOPT_CONNECTTIMEOUT => 10,
@@ -733,6 +737,9 @@ function ai_parse_response(string $raw): ?array
         'model_version'    => $data['model_version']     ?? '1.0',
         'processing_time_ms' => (int)($data['processing_time_ms'] ?? 0),
         'probabilities'    => $data['probabilities']     ?? [],
+        'gradcam_b64'      => $data['gradcam_b64']      ?? null,
+        'gradcam_bbox'     => $data['gradcam_bbox']     ?? null,
+        'gradcam_localisation' => $data['gradcam_localisation'] ?? null,
     ];
 }
 
@@ -764,7 +771,36 @@ function ai_normalize_flask_report(array $report): array
         'model_version' => $report['meta']['version_modele'] ?? '1.0',
         'processing_time_ms' => $report['meta']['processing_time_ms'] ?? 0,
         'probabilities' => $cnn['confiances_detail'] ?? [],
+        // Grad-CAM data (si renvoyé par le service Python)
+        'gradcam_b64' => $report['gradcam']['superposition_b64'] ?? null,
+        'gradcam_bbox' => $report['gradcam']['bounding_box'] ?? null,
+        'gradcam_localisation' => $report['gradcam']['localisation'] ?? null,
     ];
+}
+
+/**
+ * Sauvegarde une image Grad-CAM encodée en base64 et retourne le chemin relatif public.
+ */
+function ai_save_gradcam(?string $base64, int $userId): ?string
+{
+    if (empty($base64)) return null;
+    // retirer le préfixe data URI si présent
+    if (str_starts_with($base64, 'data:')) {
+        $parts = explode(',', $base64, 2);
+        $base64 = $parts[1] ?? $base64;
+    }
+
+    $projectRoot = dirname(__DIR__, 2);
+    $uploadDir = $projectRoot . '/assets/uploads/scans/gradcam/' . date('Y/m/') . $userId . '/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+    $filename = 'gradcam_' . bin2hex(random_bytes(6)) . '.jpg';
+    $fullPath = $uploadDir . $filename;
+
+    $decoded = base64_decode($base64);
+    if ($decoded === false) return null;
+
+    file_put_contents($fullPath, $decoded);
+    return '/assets/uploads/scans/gradcam/' . date('Y/m/') . $userId . '/' . $filename;
 }
 
 /**
@@ -846,6 +882,12 @@ function detection_create(int $userId, array $scanData, array $aiResult, array $
         ];
     }
 
+    // If the IA a fourni une image Grad-CAM encodée, la sauvegarder
+    $gradcamPath = null;
+    if (!empty($aiResult['gradcam_b64'])) {
+        $gradcamPath = ai_save_gradcam($aiResult['gradcam_b64'], $userId);
+    }
+
     $id = $model->create([
         'user_id'            => $userId,
         'patient_nom'        => security_sanitize($patientData['nom'] ?? ''),
@@ -863,6 +905,7 @@ function detection_create(int $userId, array $scanData, array $aiResult, array $
         'regions_json'       => $aiResult['regions_json'],
         'model_version'      => $aiResult['model_version'],
         'processing_time_ms' => $aiResult['processing_time_ms'],
+        'gradcam_path'       => $gradcamPath,
         'status'             => 'completed',
     ]);
 
@@ -1077,10 +1120,20 @@ function html_avatar_url(?string $avatar): string
         $projectRoot = dirname(__DIR__, 2); // c:/xampp/htdocs/pulmocare
         $fullPath = $projectRoot . '/' . ltrim($avatar, '/');
         if (file_exists($fullPath)) {
-            return $avatar;
+            $path = '/' . ltrim($avatar, '/');
+            $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
+            if ($appPath && $appPath !== '/' && !str_starts_with($path, rtrim($appPath, '/') . '/')) {
+                return rtrim($appPath, '/') . $path;
+            }
+            return $path;
         }
     }
-    return '/assets/images/default-avatar.svg';
+    $default = '/assets/images/default-avatar.svg';
+    $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
+    if ($appPath && $appPath !== '/' && !str_starts_with($default, rtrim($appPath, '/') . '/')) {
+        return rtrim($appPath, '/') . $default;
+    }
+    return $default;
 }
 
 /**

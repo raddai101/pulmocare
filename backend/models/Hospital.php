@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-/**
- * Hospital — Modèle établissement hospitalier
- */
 class Hospital extends BaseModel
 {
     protected string $table    = 'hospitals';
@@ -16,8 +13,7 @@ class Hospital extends BaseModel
         'is_active',
     ];
 
-    public function getWithDoctorsCount(): array
-    {
+    public function getWithDoctorsCount(): array{
         return $this->db->fetchAll(
             "SELECT h.*, COUNT(u.id) AS nb_medecins
              FROM {$this->table} h
