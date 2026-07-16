@@ -1,14 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
-if (!defined('FUNCTIONS_LOADED')) {
-    throw new \RuntimeException('Include functions.php first.');
-}
-
-use App\Models\User;
 use App\Config\SessionManager;
-use App\Helpers\Validator;
+use App\Models\User;
 use App\Helpers\Security;
+use App\Helpers\Validator;
 
 function user_register(array $data): array
 {

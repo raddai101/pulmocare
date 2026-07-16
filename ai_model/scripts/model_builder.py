@@ -72,7 +72,7 @@ def bloc_convolutif(
 ):
     """
     Construit UN bloc convolutif : Conv2D → [BN] → Activation → MaxPool.
-    Équivalent d'une couche dans la boucle `for c in range(C)` du notebook ANN.
+   
 
     Paramètres
     ----------
@@ -105,7 +105,7 @@ def bloc_convolutif(
     if batch_norm:
         x = BatchNormalization(name=f'{nom}_bn')(x)
 
-    # Activation — équivalent du sigmoid dans le notebook (ici ReLU)
+    # Activation  ( ReLU)
     x = tf.keras.layers.Activation(activation, name=f'{nom}_act')(x)
 
     # MaxPooling — réduit les dimensions spatiales
@@ -122,23 +122,7 @@ def couche_dense(
     regularisation: float,
     nom: str
 ):
-    """
-    Construit UNE couche Dense : Dense → Activation → Dropout.
-    Équivalent d'une couche dans la partie fully-connected.
-
-    Paramètres
-    ----------
-    x              : tensor Keras
-    nb_neurones    : int             Nombre de neurones
-    taux_dropout   : float           Taux dropout [0, 1], 0 = désactivé
-    activation     : str
-    regularisation : float
-    nom            : str
-
-    Retourne
-    --------
-    tensor Keras
-    """
+    
     reg = l2(regularisation) if regularisation > 0 else None
 
     x = Dense(nb_neurones, kernel_regularizer=reg, name=f'{nom}_dense')(x)
@@ -166,39 +150,7 @@ def construire_cnn(
     regularisation: float = 1e-4,
     pooling_global: bool = False
 ) -> Model:
-    """
-    Construit dynamiquement le CNN selon les paramètres fournis.
-
-    ─── Philosophie (miroir du notebook ANN) ────────────────────────────────
-    Notebook :  hidden_layers = (16, 16, 16)
-                → boucle for c in range(C) crée 3 couches
-
-    Ici :       conv_blocks   = ((32,3,1), (64,3,1), (128,3,1))
-                → boucle for c, (filtres,k,s) crée 3 blocs convolutifs
-
-                dense_layers  = ((512, 0.5), (256, 0.3))
-                → boucle for c, (n, d) crée 2 couches denses
-    ─────────────────────────────────────────────────────────────────────────
-
-    Paramètres
-    ----------
-    input_shape      : tuple   Forme entrée (H, W, C), ex: (224, 224, 3)
-    conv_blocks      : tuple   Tuple de (nb_filtres, kernel, stride)
-                               Longueur = nombre de blocs convolutifs
-    dense_layers     : tuple   Tuple de (nb_neurones, dropout)
-                               Longueur = nombre de couches denses
-    num_classes      : int     Nombre de classes de sortie
-    batch_norm       : bool    Batch Normalization dans les blocs conv
-    activation_conv  : str     Activation dans les blocs conv
-    activation_dense : str     Activation dans les couches denses
-    activation_sortie: str     Activation de la couche de sortie
-    regularisation   : float   Coefficient L2 (0 = désactivé)
-    pooling_global   : bool    GlobalAveragePooling au lieu de Flatten
-
-    Retourne
-    --------
-    tf.keras.Model : modèle CNN non compilé
-    """
+    
 
     # ── Entrée ────────────────────────────────────────────────────────────────
     entree = Input(shape=input_shape, name='input_ct_scan')
@@ -262,17 +214,6 @@ def compiler_modele(
 ) -> Model:
     """
     Compile le modèle avec l'optimiseur, la loss et les métriques.
-
-    Paramètres
-    ----------
-    model         : Model    Modèle Keras non compilé
-    learning_rate : float    Taux d'apprentissage
-    optimizer_nom : str      'adam', 'sgd' ou 'rmsprop'
-    loss          : str      Fonction de perte
-    metriques     : list     Liste de métriques (défaut: ['accuracy'])
-
-    Retourne
-    --------
     Model : modèle compilé
     """
     if metriques is None:
@@ -302,17 +243,7 @@ def compiler_modele(
 
 def initialiser_poids(model: Model, methode: str = 'he_normal') -> Model:
     """
-    Réinitialise les poids du modèle avec la méthode choisie.
-    Équivalent de la fonction `initialisation(dimensions)` du notebook.
-
-    Paramètres
-    ----------
-    model   : Model   Modèle Keras
-    methode : str     'he_normal', 'glorot_uniform', 'lecun_normal'
-
-    Retourne
-    --------
-    Model avec poids réinitialisés
+        Model avec poids réinitialisés
     """
     initialiseurs = {
         'he_normal':      tf.keras.initializers.HeNormal(),
@@ -337,13 +268,7 @@ def initialiser_poids(model: Model, methode: str = 'he_normal') -> Model:
 # =============================================================================
 
 def afficher_resume(model: Model):
-    """
-    Affiche le résumé complet du modèle avec le nombre de paramètres.
-
-    Paramètres
-    ----------
-    model : Model   Modèle Keras compilé ou non
-    """
+    
     print("\n" + "=" * 80)
     print("  ARCHITECTURE CNN - Détection Cancer du Poumon")
     print("=" * 80)
@@ -360,9 +285,6 @@ def obtenir_config_architecture(
     num_classes: int = NUM_CLASSES
 ) -> dict:
     """
-    Retourne un dictionnaire lisible de la configuration du modèle.
-    Utile pour logger les expériences.
-
     Retourne
     --------
     dict : configuration complète
@@ -388,46 +310,23 @@ def obtenir_config_architecture(
 # =============================================================================
 
 def sauvegarder_modele(model: Model, chemin: str = MODEL_PATH):
-    """
-    Sauvegarde le modèle complet (architecture + poids).
-
-    Paramètres
-    ----------
-    model  : Model
-    chemin : str   Chemin de sauvegarde (.h5)
-    """
+    
     os.makedirs(os.path.dirname(chemin), exist_ok=True)
     model.save(chemin)
     print(f"[OK] Modèle sauvegardé : {chemin}")
 
 
 def sauvegarder_poids(model: Model, nom: str = 'checkpoint'):
-    """
-    Sauvegarde uniquement les poids du modèle.
-
-    Paramètres
-    ----------
-    model : Model
-    nom   : str   Nom du fichier de poids (sans extension)
-    """
+    
     os.makedirs(WEIGHTS_DIR, exist_ok=True)
     chemin = os.path.join(WEIGHTS_DIR, f'{nom}.weights.h5')
     model.save_weights(chemin)
     print(f"[OK] Poids sauvegardés : {chemin}")
 
 compiler_modele
+
 def charger_modele(chemin: str = MODEL_PATH) -> Model:
-    """
-    Charge un modèle Keras depuis un fichier .h5.
-
-    Paramètres
-    ----------
-    chemin : str   Chemin vers le fichier .h5
-
-    Retourne
-    --------
-    Model : modèle chargé
-    """
+    
     if not os.path.exists(chemin):
         raise FileNotFoundError(f"Modèle introuvable : {chemin}")
 
@@ -448,18 +347,7 @@ def charger_modele(chemin: str = MODEL_PATH) -> Model:
 
 
 def charger_poids(model: Model, nom: str = 'checkpoint') -> Model:
-    """
-    Charge des poids dans un modèle existant.
-
-    Paramètres
-    ----------
-    model : Model
-    nom   : str   Nom du fichier de poids
-
-    Retourne
-    --------
-    Model avec poids chargés
-    """
+   
     chemin = os.path.join(WEIGHTS_DIR, f'{nom}.weights.h5')
     if not os.path.exists(chemin):
         raise FileNotFoundError(f"Poids introuvables : {chemin}")
@@ -470,8 +358,6 @@ def charger_poids(model: Model, nom: str = 'checkpoint') -> Model:
 
 
 if __name__ == '__main__':
-    # Exécution directe du script : construire et présenter le modèle.
-    # Les messages "port.cc" de TensorFlow sont des warnings normaux.
     modele = construire_cnn()
     modele = compiler_modele(modele)
     afficher_resume(modele)

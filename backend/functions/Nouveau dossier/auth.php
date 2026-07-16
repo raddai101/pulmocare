@@ -1,13 +1,11 @@
 <?php
-declare(strict_types=1);
 
-if (!defined('FUNCTIONS_LOADED')) {
-    throw new \RuntimeException('Include functions.php first.');
-}
+declare(strict_types=1);
 
 use App\Config\SessionManager;
 use App\Models\User;
 use App\Helpers\Security;
+use App\Helpers\Validator;
 
 function auth_login(string $email, string $password, bool $remember = false): array
 {
@@ -111,47 +109,4 @@ function auth_remember_login(string $token): bool
 function auth_current_user(): ?array
 {
     return SessionManager::getUser();
-}
-
-function auth_send_reset_link(string $email): array
-{
-    $userModel = new User();
-    $user      = $userModel->findByEmail(strtolower(trim($email)));
-
-    $genericMsg = 'Si cet email est associé à un compte, un lien de réinitialisation vous a été envoyé.';
-
-    if (!$user || !(bool)$user['is_active']) {
-        return ['success' => true, 'message' => $genericMsg];
-    }
-
-    $token = $userModel->setResetToken((int)$user['id']);
-    $sent  = mail_reset_password($user['email'], $user['prenom'] . ' ' . $user['nom'], $token);
-
-    log_activity('password_reset_request', ['user_id' => $user['id']]);
-
-    return ['success' => true, 'message' => $genericMsg];
-}
-
-function auth_reset_password(string $token, string $newPassword, string $confirmation): array
-{
-    if ($newPassword !== $confirmation) {
-        return ['success' => false, 'message' => 'Les mots de passe ne correspondent pas.'];
-    }
-
-    if (!validate_password_strength($newPassword)) {
-        return ['success' => false, 'message' => 'Le mot de passe ne respecte pas les critères de sécurité.'];
-    }
-
-    $userModel = new User();
-    $user      = $userModel->findByResetToken($token);
-
-    if (!$user) {
-        return ['success' => false, 'message' => 'Lien invalide ou expiré.'];
-    }
-
-    $userModel->updatePassword((int)$user['id'], $newPassword);
-    $userModel->clearResetToken((int)$user['id']);
-    log_activity('password_reset_success', ['user_id' => $user['id']]);
-
-    return ['success' => true, 'message' => 'Mot de passe réinitialisé avec succès.'];
 }

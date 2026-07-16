@@ -1,9 +1,6 @@
 <?php
-declare(strict_types=1);
 
-if (!defined('FUNCTIONS_LOADED')) {
-    throw new \RuntimeException('Include functions.php first.');
-}
+declare(strict_types=1);
 
 function log_activity(string $action, array $context = []): void
 {

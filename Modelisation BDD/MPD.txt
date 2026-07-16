@@ -1,0 +1,73 @@
+Sub Create_Tables()
+
+DoCmd.RunSQL "CREATE TABLE hospitals(" & _
+   "id COUNTER," & _
+   "nom VARCHAR(150) NOT NULL," & _
+   "adresse VARCHAR(255) NOT NULL," & _
+   "ville VARCHAR(100)," & _
+   "pays VARCHAR(80)," & _
+   "telepone VARCHAR(25)," & _
+   "email VARCHAR(150)," & _
+   "site_web VARCHAR(200)," & _
+   "is_active INT NOT NULL," & _
+   "created_at_ DATETIME NOT NULL," & _
+   "updated_at DATETIME NOT NULL," & _
+   "deleted_at DATETIME NOT NULL," & _
+   "PRIMARY KEY(id)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE users(" & _
+   "id COUNTER," & _
+   "nom VARCHAR(80) NOT NULL," & _
+   "prenom VARCHAR(80) NOT NULL," & _
+   "email VARCHAR(150) NOT NULL," & _
+   "password VARCHAR(255) NOT NULL," & _
+   "telephone VARCHAR(25)," & _
+   "specialite VARCHAR(100) NOT NULL," & _
+   "numero_ordre VARCHAR(50) NOT NULL," & _
+   "avatar VARCHAR(255)," & _
+   "is_active VARCHAR(50)," & _
+   "email_verified_at DATETIME," & _
+   "remember_token VARCHAR(100)," & _
+   "reset_token VARCHAR(64)," & _
+   "reset_token_expires_at DATETIME," & _
+   "last_login_at DATETIME," & _
+   "last_login_ip VARCHAR(45)," & _
+   "created_at DATETIME," & _
+   "updated_at DATETIME," & _
+   "deleted_at DATETIME," & _
+   "id_1 INT NOT NULL," & _
+   "PRIMARY KEY(id)," & _
+   "FOREIGN KEY(id_1) REFERENCES hospitals(id)" & _
+");"   
+
+DoCmd.RunSQL "CREATE TABLE detections(" & _
+   "id COUNTER," & _
+   "patient_nom VARCHAR(80)," & _
+   "patient_prenom VARCHAR(80) NOT NULL," & _
+   "patient_age DOUBLE NOT NULL," & _
+   "patient_sexe VARCHAR(50) NOT NULL," & _
+   "patient_code VARCHAR(50) NOT NULL," & _
+   "image_path VARCHAR(500) NOT NULL," & _
+   "image_original_name VARCHAR(255) NOT NULL," & _
+   "image_size INT," & _
+   "image_hash VARCHAR(64) NOT NULL," & _
+   "result_type VARCHAR(50)," & _
+   "confidence_score DECIMAL(5,2) NOT NULL," & _
+   "stage VARCHAR(50) NOT NULL," & _
+   "regions_json TEXT," & _
+   "model_version VARCHAR(20)," & _
+   "processing_time_ms INT NOT NULL," & _
+   "gradcam_path VARCHAR(500)," & _
+   "notes_medecin TEXT," & _
+   "is_reviewed INT," & _
+   "status VARCHAR(50)," & _
+   "created_at DATETIME," & _
+   "updated_at DATETIME," & _
+   "deleted_at DATETIME," & _
+   "id_1 INT NOT NULL," & _
+   "PRIMARY KEY(id)," & _
+   "FOREIGN KEY(id_1) REFERENCES users(id)" & _
+");"   
+
+End Sub

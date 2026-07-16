@@ -1,9 +1,6 @@
 <?php
-declare(strict_types=1);
 
-if (!defined('FUNCTIONS_LOADED')) {
-    throw new \RuntimeException('Include functions.php first.');
-}
+declare(strict_types=1);
 
 function ai_predict(string $imagePath): array
 {
@@ -136,10 +133,10 @@ function ai_parse_response(string $raw): ?array
 
 function ai_normalize_flask_report(array $report): array
 {
-    $cnn = $report['niveau1_cnn'] ?? [];
+    $cnn  = $report['niveau1_cnn'] ?? [];
     $diag = $report['niveau2_diagnostic'] ?? [];
     $label = strtolower((string)($cnn['classe_predite'] ?? ''));
-    $risk = strtolower((string)($diag['niveau_risque'] ?? ''));
+    $risk  = strtolower((string)($diag['niveau_risque'] ?? ''));
 
     $resultType = match (true) {
         str_contains($label, 'malignant'), str_contains($label, 'malin'), str_contains($risk, 'eleve'), str_contains($risk, 'élevé') => 'cancereux',

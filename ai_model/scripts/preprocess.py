@@ -56,18 +56,7 @@ def charger_image(chemin: str, taille: tuple = IMG_SIZE) -> np.ndarray:
 # =============================================================================
 
 def redimensionner(image: np.ndarray, taille: tuple = IMG_SIZE) -> np.ndarray:
-    """
-    Redimensionne une image en conservant les proportions (padding noir).
-
-    Paramètres
-    ----------
-    image : np.ndarray   Image source
-    taille : tuple       (hauteur, largeur) cible
-
-    Retourne
-    --------
-    np.ndarray : image redimensionnée
-    """
+    
     h_cible, w_cible = taille
     h, w = image.shape[:2]
 
@@ -92,33 +81,12 @@ def redimensionner(image: np.ndarray, taille: tuple = IMG_SIZE) -> np.ndarray:
 
 
 def normaliser(image: np.ndarray) -> np.ndarray:
-    """
-    Normalise les pixels de [0, 255] vers [0.0, 1.0].
-
-    Paramètres
-    ----------
-    image : np.ndarray
-
-    Retourne
-    --------
-    np.ndarray : float32
-    """
+    
     return image.astype(np.float32) / 255.0
 
 
 def ameliorer_contraste(image: np.ndarray) -> np.ndarray:
-    """
-    Améliore le contraste via CLAHE (Contrast Limited Adaptive Histogram
-    Equalization), bien adapté aux images médicales CT Scan.
-
-    Paramètres
-    ----------
-    image : np.ndarray   Image RGB normalisée [0, 1]
-
-    Retourne
-    --------
-    np.ndarray : image avec contraste amélioré
-    """
+    
     # Reconvertir en uint8 pour OpenCV
     img_uint8 = (image * 255).astype(np.uint8)
     img_lab   = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2LAB)
@@ -132,18 +100,7 @@ def ameliorer_contraste(image: np.ndarray) -> np.ndarray:
 
 
 def supprimer_bruit(image: np.ndarray, force: int = 5) -> np.ndarray:
-    """
-    Supprime le bruit via filtre gaussien.
-
-    Paramètres
-    ----------
-    image : np.ndarray   Image normalisée [0, 1]
-    force : int          Taille du kernel (impair), ex: 3, 5, 7
-
-    Retourne
-    --------
-    np.ndarray : image débruitée
-    """
+    
     img_uint8  = (image * 255).astype(np.uint8)
     img_filtre = cv2.GaussianBlur(img_uint8, (force, force), 0)
     return img_filtre.astype(np.float32) / 255.0
@@ -178,22 +135,7 @@ def pipeline_pretraitement(
     appliquer_debruitage: bool = True,
     force_debruitage: int = 3
 ) -> np.ndarray:
-    """
-    Applique la chaîne complète de prétraitement sur une image.
-    Inspiré du notebook ANN : les étapes s'enchaînent de manière
-    modulaire et chaque étape est activable par paramètre.
-
-    Paramètres
-    ----------
-    image              : np.ndarray   Image brute RGB uint8 ou float32
-    appliquer_contraste: bool         Active CLAHE (défaut: True)
-    appliquer_debruitage: bool        Active le filtre gaussien (défaut: True)
-    force_debruitage   : int          Kernel du filtre gaussien
-
-    Retourne
-    --------
-    np.ndarray : image prête pour le CNN, shape (224, 224, 3), float32 [0,1]
-    """
+    
     # Étape 1 : Redimensionnement
     image = redimensionner(image, IMG_SIZE)
 
@@ -216,20 +158,7 @@ def pretraiter_depuis_chemin(
     appliquer_contraste: bool = True,
     appliquer_debruitage: bool = True
 ) -> np.ndarray:
-    """
-    Charge et prétraite une image depuis son chemin disque.
-    Point d'entrée unique pour la prédiction en production.
-
-    Paramètres
-    ----------
-    chemin              : str    Chemin vers l'image CT Scan
-    appliquer_contraste : bool
-    appliquer_debruitage: bool
-
-    Retourne
-    --------
-    np.ndarray : image prête, shape (1, 224, 224, 3) — batch de 1
-    """
+    
     image_brute = cv2.imread(chemin)
     if image_brute is None:
         raise FileNotFoundError(f"Image introuvable : {chemin}")
@@ -248,14 +177,7 @@ def pretraiter_depuis_chemin(
 # =============================================================================
 
 def creer_generateur_augmentation() -> ImageDataGenerator:
-    """
-    Crée un générateur Keras avec augmentation pour l'entraînement.
-    Les paramètres proviennent de config.py.
-
-    Retourne
-    --------
-    ImageDataGenerator configuré pour l'entraînement
-    """
+    
     return ImageDataGenerator(
         rescale=1.0 / 255,
         rotation_range=ROTATION_RANGE if USE_AUGMENTATION else 0,
@@ -269,13 +191,7 @@ def creer_generateur_augmentation() -> ImageDataGenerator:
 
 
 def creer_generateur_evaluation() -> ImageDataGenerator:
-    """
-    Crée un générateur Keras simple (rescale uniquement) pour val/test.
-
-    Retourne
-    --------
-    ImageDataGenerator sans augmentation
-    """
+    
     return ImageDataGenerator(rescale=1.0 / 255)
 
 
@@ -283,23 +199,7 @@ def charger_donnees_depuis_dossiers(
     batch_size: int = BATCH_SIZE,
     taille: tuple = IMG_SIZE
 ) -> tuple:
-    """
-    Charge les données depuis les dossiers train/val/test via Keras.
-    Structure attendue :
-        dataset/
-            train/    normal/ begnin_case/ malignant_case/
-            validation/  ...
-            test/        ...
-
-    Paramètres
-    ----------
-    batch_size : int     Taille des batchs
-    taille     : tuple   (hauteur, largeur) des images
-
-    Retourne
-    --------
-    tuple : (generateur_train, generateur_val, generateur_test)
-    """
+    
     gen_train = creer_generateur_augmentation()
     gen_eval  = creer_generateur_evaluation()
 
@@ -338,20 +238,7 @@ def charger_donnees_depuis_csv(
     images_dir: str,
     batch_size: int = BATCH_SIZE
 ):
-    """
-    Charge les données depuis un fichier CSV d'annotations (format Roboflow).
-    Compatible avec _annotations.csv du dataset CT Scan.
-
-    Paramètres
-    ----------
-    annotations_csv : str   Chemin vers _annotations.csv
-    images_dir      : str   Dossier contenant les images
-    batch_size      : int
-
-    Retourne
-    --------
-    tuple : (X, y) numpy arrays prêts pour l'entraînement
-    """
+    
     import pandas as pd
 
     df = pd.read_csv(annotations_csv)
@@ -388,14 +275,7 @@ def charger_donnees_depuis_csv(
 # =============================================================================
 
 def afficher_etapes_pretraitement(chemin_image: str):
-    """
-    Affiche côte à côte les étapes du pipeline de prétraitement.
-    Utile pour le débogage et la vérification.
-
-    Paramètres
-    ----------
-    chemin_image : str   Chemin vers une image CT Scan
-    """
+    
     import matplotlib.pyplot as plt
 
     image_brute = cv2.imread(chemin_image)

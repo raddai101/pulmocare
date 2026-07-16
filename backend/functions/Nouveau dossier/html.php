@@ -1,11 +1,6 @@
 <?php
+
 declare(strict_types=1);
-
-if (!defined('FUNCTIONS_LOADED')) {
-    throw new \RuntimeException('Include functions.php first.');
-}
-
-use App\Config\SessionManager;
 
 function html_set_flash(string $type, string $message): void
 {
@@ -64,6 +59,7 @@ function html_avatar_url(?string $avatar): string
             return $path;
         }
     }
+
     $default = '/assets/images/default-avatar.svg';
     $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
     if ($appPath && $appPath !== '/' && !str_starts_with($default, rtrim($appPath, '/') . '/')) {
