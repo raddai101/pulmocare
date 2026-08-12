@@ -272,6 +272,8 @@ $currentFile = basename(__FILE__);
             .content { padding: 20px 16px; }
             .form-grid, .form-grid.three, .result-main { grid-template-columns: 1fr; }
         }
+
+        
     </style>
 </head>
 <body>

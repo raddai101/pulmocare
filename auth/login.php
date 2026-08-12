@@ -36,9 +36,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = html_page_title('Connexion');
+
+// Étapes du workflow réel de la plateforme — affichées dans le guide défilant
+$workflowSteps = [
+    [
+        'icon'  => 'fa-regular fa-id-card',
+        'title' => 'Dossier patient',
+        'text'  => 'Renseignez l\'identité et les informations essentielles du patient.',
+    ],
+    [
+        'icon'  => 'fa-regular fa-image',
+        'title' => 'Import du scan',
+        'text'  => 'Déposez l\'image CT Scan — JPG, PNG, DICOM ou TIFF.',
+    ],
+    [
+        'icon'  => 'fa-regular fa-lightbulb',
+        'title' => 'Analyse CNN',
+        'text'  => 'Le réseau de neurones classe l\'image et localise les zones suspectes.',
+    ],
+    [
+        'icon'  => 'fa-regular fa-file-lines',
+        'title' => 'Rapport médical',
+        'text'  => 'Consultez le score de confiance et exportez le compte-rendu.',
+    ],
+];
 ?>
 <!DOCTYPE html>
-<html lang="fr" data-theme="dark">
+<html lang="fr" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,369 +71,388 @@ $pageTitle = html_page_title('Connexion');
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* ── Reset & Variables ───────────────────────── */
+        /* ══════════════════════════════════════════════════════════
+           TOKENS — Identité PulmoCare IA (teal & blanc)
+           ══════════════════════════════════════════════════════════ */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg-deep:      #050a18;
-            --bg-card:      #0d1526;
-            --bg-input:     #111d35;
-            --border:       rgba(59,130,246,.18);
-            --border-focus: #3b82f6;
-            --text-primary: #f0f4ff;
-            --text-muted:   #8899b4;
-            --blue-500:     #3b82f6;
-            --blue-600:     #2563eb;
-            --blue-glow:    rgba(59,130,246,.35);
-            --red-400:      #f87171;
-            --green-400:    #4ade80;
-            --radius-lg:    16px;
-            --radius-md:    10px;
-            --transition:   .25s cubic-bezier(.4,0,.2,1);
+            --teal:         #177e73;
+            --teal-deep:    #0f5751;
+            --teal-soft:    #e6f2ef;
+            --teal-glow:    rgba(23, 126, 115, .18);
+            --ink:          #142322;
+            --ink-muted:    #5f6f6d;
+            --ink-faint:    #94a29f;
+            --paper:        #ffffff;
+            --canvas:       #f4f8f7;
+            --line:         rgba(20, 35, 34, .10);
+            --amber:        #c78622;
+            --red:          #c0483f;
+            --radius-lg:    22px;
+            --radius-md:    13px;
+            --ease:         cubic-bezier(.22, 1, .36, 1);
         }
+
+        html { scroll-behavior: smooth; }
 
         body {
             min-height: 100vh;
-            background: var(--bg-deep);
-            font-family: 'Inter', sans-serif;
-            color: var(--text-primary);
+            background: var(--canvas);
+            font-family: 'Inter', system-ui, sans-serif;
+            color: var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            overflow-x: hidden;
+            padding: 32px 24px;
         }
 
-        /* ── Background animated grid ────────────────── */
         body::before {
             content: '';
             position: fixed; inset: 0;
             background:
-                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(59,130,246,.12) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 80% 90%, rgba(99,102,241,.10) 0%, transparent 60%),
-                linear-gradient(180deg, var(--bg-deep) 0%, #06101f 100%);
+                radial-gradient(1100px 620px at 12% -8%, rgba(23,126,115,.09), transparent 55%),
+                radial-gradient(900px 560px at 104% 108%, rgba(23,126,115,.06), transparent 55%);
             pointer-events: none;
         }
 
-        /* ── Layout ──────────────────────────────────── */
-        .auth-wrapper {
-            width: 100%;
-            max-width: 980px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 600px;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px var(--border);
+        /* ══════════════════════════════════════════════════════════
+           SHELL
+           ══════════════════════════════════════════════════════════ */
+        .shell {
             position: relative;
             z-index: 1;
-        }
-
-        /* ── Left panel (brand) ───────────────────────── */
-        .auth-brand {
-            background: linear-gradient(145deg, #0f1f3e 0%, #1a3a6b 50%, #0e2851 100%);
-            padding: 56px 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .auth-brand::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%233b82f6' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: .5;
-        }
-
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .brand-logo__icon {
-            width: 52px; height: 52px;
-            background: linear-gradient(135deg, var(--blue-500), #6366f1);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 8px 24px var(--blue-glow);
-        }
-
-        .brand-logo__text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: -.5px;
-        }
-
-        .brand-logo__text span {
-            display: block;
-            font-size: 11px;
-            font-weight: 400;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .brand-features {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .brand-features li {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-        }
-
-        .brand-features__icon {
-            width: 36px; height: 36px;
-            background: rgba(59,130,246,.15);
-            border: 1px solid rgba(59,130,246,.25);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            color: var(--blue-500);
-            flex-shrink: 0;
-        }
-
-        .brand-features__text strong {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .brand-features__text span {
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        .brand-footer {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* ── Right panel (form) ───────────────────────── */
-        .auth-form-panel {
-            background: var(--bg-card);
-            padding: 56px 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .auth-form-panel h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: -.5px;
-            margin-bottom: 6px;
-        }
-
-        .auth-form-panel p.subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 36px;
-        }
-
-        /* Alerts */
-        .alert-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--radius-md); font-size: 13.5px; }
-        .alert--error   { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: var(--red-400); }
-        .alert--success { background: rgba(74,222,128,.1);  border: 1px solid rgba(74,222,128,.3);  color: var(--green-400); }
-
-        /* Form elements */
-        .form-group { margin-bottom: 20px; }
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            letter-spacing: .2px;
-        }
-
-        .input-wrap { position: relative; }
-        .input-wrap__icon {
-            position: absolute;
-            left: 14px; top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 15px;
-            pointer-events: none;
-            transition: color var(--transition);
-        }
-
-        .form-control {
             width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 13px 44px 13px 42px;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color var(--transition), box-shadow var(--transition);
-        }
-
-        .form-control:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px var(--blue-glow);
-        }
-
-        .form-control::placeholder { color: var(--text-muted); opacity: .6; }
-
-        .input-toggle {
-            position: absolute;
-            right: 14px; top: 50%;
-            transform: translateY(-50%);
-            background: none; border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 15px;
-            transition: color var(--transition);
-            padding: 4px;
-        }
-        .input-toggle:hover { color: var(--text-primary); }
-
-        .form-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-        }
-
-        .checkbox-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-muted); }
-        .checkbox-wrap input[type="checkbox"] { accent-color: var(--blue-500); width: 15px; height: 15px; }
-
-        .link { color: var(--blue-500); text-decoration: none; font-size: 13px; transition: color var(--transition); }
-        .link:hover { color: #60a5fa; text-decoration: underline; }
-
-        /* Submit button */
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--blue-500) 0%, #6366f1 100%);
-            border: none;
-            border-radius: var(--radius-md);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            letter-spacing: .3px;
-            transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-            box-shadow: 0 4px 20px var(--blue-glow);
-            position: relative;
+            max-width: 1128px;
+            min-height: 660px;
+            display: grid;
+            grid-template-columns: minmax(0, 460px) 1fr;
+            background: var(--paper);
+            border-radius: var(--radius-lg);
             overflow: hidden;
+            box-shadow:
+                0 1px 0 rgba(20,35,34,.03),
+                0 30px 70px -24px rgba(15, 60, 55, .28);
         }
 
-        .btn-submit:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 8px 28px var(--blue-glow); }
-        .btn-submit:active { transform: translateY(0); }
-        .btn-submit .btn-spinner { display: none; }
-        .btn-submit.loading .btn-text { display: none; }
-        .btn-submit.loading .btn-spinner { display: inline-block; }
+        /* ══════════════════════════════════════════════════════════
+           FORM PANEL
+           ══════════════════════════════════════════════════════════ */
+        .form-panel {
+            padding: 52px 52px 44px;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .divider {
+        .brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 24px 0;
-            color: var(--text-muted);
-            font-size: 12px;
+            margin-bottom: 44px;
         }
-        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        .form-footer { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 20px; }
+        .brand__mark {
+            width: 40px; height: 40px;
+            border-radius: 11px;
+            background: var(--teal);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 17px;
+            flex-shrink: 0;
+        }
 
-        /* ── Responsive ───────────────────────────────── */
-        @media (max-width: 768px) {
-            .auth-wrapper { grid-template-columns: 1fr; max-width: 440px; }
-            .auth-brand { display: none; }
-            .auth-form-panel { padding: 40px 28px; }
+        .brand__text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16.5px; font-weight: 700;
+            letter-spacing: -.2px;
+            line-height: 1.15;
+        }
+        .brand__text span {
+            display: block;
+            font-size: 10.5px; font-weight: 500;
+            color: var(--ink-muted);
+            letter-spacing: 1.2px; text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        .form-panel h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px; font-weight: 700;
+            letter-spacing: -.7px;
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+
+        .form-panel .lede {
+            font-size: 14px; color: var(--ink-muted);
+            line-height: 1.55;
+            margin-bottom: 30px;
+            max-width: 34ch;
+        }
+
+        /* Alerts */
+        .alert-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .alert {
+            display: flex; align-items: flex-start; gap: 9px;
+            padding: 11px 14px; border-radius: 10px;
+            font-size: 13px; line-height: 1.5;
+        }
+        .alert i { margin-top: 1.5px; flex-shrink: 0; }
+        .alert--error   { background: #fbecea; color: #9c332b; border: 1px solid #f3d3ce; }
+        .alert--success { background: var(--teal-soft); color: var(--teal-deep); border: 1px solid #cfe6e2; }
+
+        /* Form */
+        .field { margin-bottom: 18px; }
+        .field label {
+            display: block;
+            font-size: 12.5px; font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 7px;
+            letter-spacing: .1px;
+        }
+
+        .field-shell { position: relative; }
+        .field-shell i.icon-lead {
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            color: var(--ink-faint); font-size: 14.5px; pointer-events: none;
+            transition: color .2s var(--ease);
+        }
+
+        .field-shell input {
+            width: 100%;
+            background: #fbfdfc;
+            border: 1.5px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: 13px 16px 13px 42px;
+            font-size: 14px; font-family: inherit; color: var(--ink);
+            outline: none;
+            transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+        }
+        .field-shell input::placeholder { color: var(--ink-faint); }
+        .field-shell input:focus {
+            border-color: var(--teal);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--teal-glow);
+        }
+        .field-shell input:focus ~ i.icon-lead,
+        .field-shell:focus-within i.icon-lead { color: var(--teal); }
+
+        .field-shell .icon-toggle {
+            position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer;
+            color: var(--ink-faint); font-size: 14.5px; padding: 4px;
+            transition: color .2s var(--ease);
+        }
+        .field-shell .icon-toggle:hover { color: var(--teal); }
+
+        .row-between {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 26px; gap: 12px; flex-wrap: wrap;
+        }
+
+        .check {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: var(--ink-muted);
+            cursor: pointer; user-select: none;
+        }
+        .check input { accent-color: var(--teal); width: 15px; height: 15px; cursor: pointer; }
+
+        .link { color: var(--teal); font-size: 13px; font-weight: 600; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--teal);
+            border: none; border-radius: var(--radius-md);
+            color: #fff; font-size: 14.5px; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+            letter-spacing: .2px;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            box-shadow: 0 10px 24px -8px var(--teal-glow);
+            transition: background .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+        }
+        .btn-submit:hover  { background: var(--teal-deep); transform: translateY(-1px); box-shadow: 0 14px 28px -8px var(--teal-glow); }
+        .btn-submit:active { transform: none; }
+        .btn-submit .spinner { display: none; }
+        .btn-submit.loading .label   { display: none; }
+        .btn-submit.loading .spinner { display: inline-flex; }
+
+        .foot-note {
+            margin-top: auto;
+            padding-top: 30px;
+            text-align: center;
+            font-size: 13px; color: var(--ink-muted);
+        }
+        .foot-note a { color: var(--teal); font-weight: 700; text-decoration: none; }
+        .foot-note a:hover { text-decoration: underline; }
+
+        /* ══════════════════════════════════════════════════════════
+           HERO PANEL — photo réelle + guide de workflow
+           ══════════════════════════════════════════════════════════ */
+        .hero-panel {
+            position: relative;
+            background:
+                linear-gradient(180deg, rgba(10,40,37,.16) 0%, rgba(8,32,30,.72) 78%, rgba(6,26,24,.90) 100%),
+                var(--teal-deep) url('/pulmocare/assets/images/doctor-login.jpg') center 18% / cover no-repeat;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 28px 28px 26px;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Filet de sécurité si l'image n'est pas encore présente sur le serveur */
+        .hero-panel.hero-panel--fallback {
+            background:
+                linear-gradient(180deg, rgba(10,40,37,.10) 0%, rgba(8,32,30,.7) 100%),
+                radial-gradient(900px 600px at 20% 0%, #1c948a, var(--teal-deep) 65%);
+        }
+
+        .hero-top {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px;
+        }
+
+        .pill {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 13px 7px 11px;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.22);
+            backdrop-filter: blur(6px);
+            border-radius: 99px;
+            font-size: 12px; font-weight: 600; letter-spacing: .2px;
+            color: #eafaf7;
+        }
+        .pill i { font-size: 11px; color: #7fe8d8; }
+
+        .lang-pill {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.22);
+            backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11.5px; font-weight: 700; color: #eafaf7;
+        }
+
+        .hero-stat {
+            align-self: flex-start;
+            margin-top: auto;
+            margin-bottom: 18px;
+        }
+        .hero-stat__num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 44px; font-weight: 700; letter-spacing: -1.5px;
+            line-height: 1;
+            text-shadow: 0 2px 18px rgba(0,0,0,.25);
+        }
+        .hero-stat__label {
+            font-size: 13px; color: rgba(255,255,255,.78);
+            margin-top: 6px; max-width: 30ch; line-height: 1.5;
+        }
+
+        /* ─── Guide de workflow (carrousel auto, droite → gauche) ─── */
+        .guide {
+            background: rgba(9, 32, 30, .56);
+            border: 1px solid rgba(255,255,255,.14);
+            backdrop-filter: blur(14px);
+            border-radius: 17px;
+            padding: 18px 18px 16px;
+        }
+
+        .guide__head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .guide__head span {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.1px;
+            color: rgba(255,255,255,.62);
+        }
+        .guide__dots { display: flex; gap: 6px; }
+        .guide__dot {
+            width: 16px; height: 4px; border-radius: 99px;
+            background: rgba(255,255,255,.28);
+            border: none; cursor: pointer; padding: 0;
+            transition: background .25s var(--ease), width .25s var(--ease);
+        }
+        .guide__dot.is-active { background: #fff; width: 26px; }
+
+        .guide__viewport { overflow: hidden; position: relative; height: 64px; }
+        .guide__track {
+            display: flex;
+            width: 100%; height: 100%;
+            transition: transform .55s var(--ease);
+        }
+        .guide__slide {
+            flex: 0 0 100%;
+            display: flex; align-items: center; gap: 13px;
+        }
+        .guide__icon {
+            width: 42px; height: 42px; border-radius: 11px;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: #fff;
+            flex-shrink: 0;
+        }
+        .guide__body strong {
+            display: block; font-size: 13.5px; font-weight: 700;
+            letter-spacing: -.1px; margin-bottom: 2px;
+        }
+        .guide__body p {
+            font-size: 12px; line-height: 1.4;
+            color: rgba(255,255,255,.72);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .guide__track { transition: none; }
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           RESPONSIVE
+           ══════════════════════════════════════════════════════════ */
+        @media (max-width: 900px) {
+            .shell { grid-template-columns: 1fr; max-width: 460px; min-height: 0; }
+            .hero-panel { display: none; }
+            .form-panel { padding: 40px 30px 34px; }
+        }
+        @media (max-width: 420px) {
+            .form-panel { padding: 34px 22px 28px; }
+            .form-panel h1 { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
-<div class="auth-wrapper">
+<div class="shell">
 
-    <!-- LEFT — Brand panel -->
-    <div class="auth-brand">
-        <div class="brand-logo">
-            <div class="brand-logo__icon"><i class="fa-solid fa-lungs"></i></div>
-            <div class="brand-logo__text">
+    <!-- ═══════════ FORM PANEL ═══════════ -->
+    <div class="form-panel">
+
+        <div class="brand">
+            <div class="brand__mark"><i class="fa-solid fa-lungs"></i></div>
+            <div class="brand__text">
                 PulmoCare IA
-                <span>Plateforme médicale intelligente</span>
+                <span>Espace praticien</span>
             </div>
         </div>
 
-        <ul class="brand-features">
-            <li>
-                <div class="brand-features__icon"><i class="fa-solid fa-brain"></i></div>
-                <div class="brand-features__text">
-                    <strong>Détection IA avancée</strong>
-                    <span>Réseau CNN entraîné sur +8 500 images CT Scan pulmonaires</span>
-                </div>
-            </li>
-            <li>
-                <div class="brand-features__icon"><i class="fa-solid fa-chart-pie"></i></div>
-                <div class="brand-features__text">
-                    <strong>Résultats en temps réel</strong>
-                    <span>Analyse complète avec score de confiance et stade de gravité</span>
-                </div>
-            </li>
-            <li>
-                <div class="brand-features__icon"><i class="fa-solid fa-shield-halved"></i></div>
-                <div class="brand-features__text">
-                    <strong>Plateforme sécurisée</strong>
-                    <span>Données chiffrées, accès réservé aux professionnels de santé</span>
-                </div>
-            </li>
-            <li>
-                <div class="brand-features__icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                <div class="brand-features__text">
-                    <strong>Historique complet</strong>
-                    <span>Suivi et archivage de toutes vos analyses CT Scan</span>
-                </div>
-            </li>
-        </ul>
-
-        <div class="brand-footer">
-            &copy; <?= date('Y') ?> PulmoCare IA — Outil d'aide au diagnostic médical
-        </div>
-    </div>
-
-    <!-- RIGHT — Form panel -->
-    <div class="auth-form-panel">
         <h1>Connexion</h1>
-        <p class="subtitle">Accès réservé aux médecins autorisés</p>
+        <p class="lede">Accédez à votre espace d'analyse CT Scan. Réservé aux médecins autorisés de la plateforme.</p>
 
         <?php if (!empty($errors)): ?>
-        <div class="alert-list">
+        <div class="alert-stack">
             <?php foreach ($errors as $err): ?>
             <div class="alert alert--error" role="alert">
                 <i class="fa-solid fa-circle-exclamation"></i>
-                <?= htmlspecialchars($err) ?>
+                <span><?= htmlspecialchars($err) ?></span>
             </div>
             <?php endforeach; ?>
         </div>
@@ -420,15 +463,14 @@ $pageTitle = html_page_title('Connexion');
         <form method="POST" action="" id="loginForm" novalidate autocomplete="on">
             <?= html_csrf_input() ?>
 
-            <div class="form-group">
-                <label class="form-label" for="email">Adresse email professionnelle</label>
-                <div class="input-wrap">
-                    <i class="fa-regular fa-envelope input-wrap__icon"></i>
+            <div class="field">
+                <label for="email">Adresse email professionnelle</label>
+                <div class="field-shell">
+                    <i class="fa-regular fa-envelope icon-lead"></i>
                     <input
                         type="email"
                         id="email"
                         name="email"
-                        class="form-control"
                         placeholder="dr.nom@hopital.fr"
                         value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                         required
@@ -438,27 +480,26 @@ $pageTitle = html_page_title('Connexion');
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="password">Mot de passe</label>
-                <div class="input-wrap">
-                    <i class="fa-solid fa-lock input-wrap__icon"></i>
+            <div class="field">
+                <label for="password">Mot de passe</label>
+                <div class="field-shell">
+                    <i class="fa-solid fa-lock icon-lead"></i>
                     <input
                         type="password"
                         id="password"
                         name="password"
-                        class="form-control"
                         placeholder="••••••••"
                         required
                         autocomplete="current-password"
                     >
-                    <button type="button" class="input-toggle" id="togglePwd" aria-label="Afficher le mot de passe">
+                    <button type="button" class="icon-toggle" id="togglePwd" aria-label="Afficher le mot de passe">
                         <i class="fa-regular fa-eye"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="form-row">
-                <label class="checkbox-wrap">
+            <div class="row-between">
+                <label class="check">
                     <input type="checkbox" name="remember" id="remember">
                     Se souvenir de moi
                 </label>
@@ -466,21 +507,65 @@ $pageTitle = html_page_title('Connexion');
             </div>
 
             <button type="submit" class="btn-submit" id="loginBtn">
-                <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i>&nbsp; Se connecter</span>
-                <span class="btn-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Connexion…</span>
+                <span class="label"><i class="fa-solid fa-arrow-right-to-bracket"></i>&nbsp; Se connecter</span>
+                <span class="spinner"><i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Connexion…</span>
             </button>
         </form>
 
-        <div class="form-footer">
-            Pas encore de compte ?&nbsp;
-            <a href="/pulmocare/auth/register.php" class="link" style="font-weight:600">Demander un accès</a>
+        <p class="foot-note">
+            Pas encore de compte ? <a href="/pulmocare/auth/register.php">Demander un accès</a>
+        </p>
+    </div>
+
+    <!-- ═══════════ HERO PANEL ═══════════ -->
+    <div class="hero-panel" id="heroPanel">
+
+        <div class="hero-top">
+            <span class="pill"><i class="fa-solid fa-circle"></i> Plateforme médicale sécurisée</span>
+            <span class="lang-pill">FR</span>
         </div>
+
+        <div class="hero-stat">
+            <div class="hero-stat__num">95,83%</div>
+            <div class="hero-stat__label">Précision du modèle CNN sur la classification normal / bénin / malin.</div>
+        </div>
+
+        <div class="guide">
+            <div class="guide__head">
+                <span>Comment ça marche</span>
+                <div class="guide__dots" id="guideDots"></div>
+            </div>
+            <div class="guide__viewport">
+                <div class="guide__track" id="guideTrack">
+                    <?php foreach ($workflowSteps as $step): ?>
+                    <div class="guide__slide">
+                        <div class="guide__icon"><i class="<?= htmlspecialchars($step['icon']) ?>"></i></div>
+                        <div class="guide__body">
+                            <strong><?= htmlspecialchars($step['title']) ?></strong>
+                            <p><?= htmlspecialchars($step['text']) ?></p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>
 
 <script>
-    // Toggle password visibility
+    // ── Vérifie que la photo du médecin est bien présente ──────
+    // (si le fichier n'a pas encore été déposé côté serveur, on
+    //  bascule sur un dégradé teal pour ne jamais casser la mise en page)
+    (function checkHeroImage() {
+        const hero = document.getElementById('heroPanel');
+        const img  = new Image();
+        img.onerror = () => hero.classList.add('hero-panel--fallback');
+        img.src = '/pulmocare/assets/images/doctor-login.jpg';
+    })();
+
+    // ── Toggle mot de passe ──────────────────────────────────────
     const toggleBtn = document.getElementById('togglePwd');
     const pwdInput  = document.getElementById('password');
     toggleBtn.addEventListener('click', () => {
@@ -489,23 +574,64 @@ $pageTitle = html_page_title('Connexion');
         toggleBtn.querySelector('i').className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
     });
 
-    // Loading state on submit
-    const form    = document.getElementById('loginForm');
-    const btn     = document.getElementById('loginBtn');
-    form.addEventListener('submit', (e) => {
+    // ── État de chargement au submit ─────────────────────────────
+    const form = document.getElementById('loginForm');
+    const btn  = document.getElementById('loginBtn');
+    form.addEventListener('submit', () => {
         const email = document.getElementById('email').value.trim();
         const pwd   = pwdInput.value;
-        if (!email || !pwd) return; // HTML5 validation handles it
+        if (!email || !pwd) return;
         btn.classList.add('loading');
         btn.disabled = true;
     });
 
-    // Input focus — highlight icon
-    document.querySelectorAll('.form-control').forEach(input => {
-        const icon = input.closest('.input-wrap')?.querySelector('.input-wrap__icon');
-        input.addEventListener('focus',  () => icon && (icon.style.color = '#3b82f6'));
-        input.addEventListener('blur',   () => icon && (icon.style.color = ''));
-    });
+    // ── Guide de workflow : carrousel auto, glisse de droite à gauche ──
+    (function initGuide() {
+        const track = document.getElementById('guideTrack');
+        const dotsWrap = document.getElementById('guideDots');
+        if (!track) return;
+
+        const slides = Array.from(track.children);
+        const dots = slides.map((_, i) => {
+            const b = document.createElement('button');
+            b.className = 'guide__dot' + (i === 0 ? ' is-active' : '');
+            b.setAttribute('aria-label', 'Étape ' + (i + 1));
+            b.addEventListener('click', () => goTo(i, true));
+            dotsWrap.appendChild(b);
+            return b;
+        });
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let index = 0;
+        let timer = null;
+
+        function render() {
+            track.style.transform = `translateX(-${index * 100}%)`;
+            dots.forEach((d, i) => d.classList.toggle('is-active', i === index));
+        }
+
+        function goTo(i, manual) {
+            index = (i + slides.length) % slides.length;
+            render();
+            if (manual) restart();
+        }
+
+        function next() { goTo(index + 1); }
+
+        function start() {
+            if (reduceMotion || slides.length < 2) return;
+            timer = setInterval(next, 3400);
+        }
+        function stop() { if (timer) clearInterval(timer); }
+        function restart() { stop(); start(); }
+
+        const guideEl = track.closest('.guide');
+        guideEl.addEventListener('mouseenter', stop);
+        guideEl.addEventListener('mouseleave', start);
+
+        render();
+        start();
+    })();
 </script>
 </body>
 </html>
