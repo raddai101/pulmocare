@@ -36,30 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = html_page_title('Connexion');
-
-// Étapes du workflow réel de la plateforme — affichées dans le guide défilant
-$workflowSteps = [
-    [
-        'icon'  => 'fa-regular fa-id-card',
-        'title' => 'Dossier patient',
-        'text'  => 'Renseignez l\'identité et les informations essentielles du patient.',
-    ],
-    [
-        'icon'  => 'fa-regular fa-image',
-        'title' => 'Import du scan',
-        'text'  => 'Déposez l\'image CT Scan — JPG, PNG, DICOM ou TIFF.',
-    ],
-    [
-        'icon'  => 'fa-regular fa-lightbulb',
-        'title' => 'Analyse CNN',
-        'text'  => 'Le réseau de neurones classe l\'image et localise les zones suspectes.',
-    ],
-    [
-        'icon'  => 'fa-regular fa-file-lines',
-        'title' => 'Rapport médical',
-        'text'  => 'Consultez le score de confiance et exportez le compte-rendu.',
-    ],
-];
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
@@ -69,363 +45,333 @@ $workflowSteps = [
     <meta name="robots" content="noindex, nofollow">
     <title><?= $pageTitle ?></title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* ══════════════════════════════════════════════════════════
-           TOKENS — Identité PulmoCare IA (teal & blanc)
-           ══════════════════════════════════════════════════════════ */
+        /* ============================================================
+           LOGIN — PulmoCare IA
+           Deux volets : formulaire à gauche, portrait clinique à droite
+           séparés par une diagonale. Palette maison (sauge / blanc).
+           ============================================================ */
+
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --teal:         #177e73;
-            --teal-deep:    #0f5751;
-            --teal-soft:    #e6f2ef;
-            --teal-glow:    rgba(23, 126, 115, .18);
-            --ink:          #142322;
-            --ink-muted:    #5f6f6d;
-            --ink-faint:    #94a29f;
-            --paper:        #ffffff;
-            --canvas:       #f4f8f7;
-            --line:         rgba(20, 35, 34, .10);
-            --amber:        #c78622;
-            --red:          #c0483f;
-            --radius-lg:    22px;
-            --radius-md:    13px;
-            --ease:         cubic-bezier(.22, 1, .36, 1);
+            --paper:      #f5f7f4;
+            --card:       #ffffff;
+            --teal-900:   #0e3d38;
+            --teal-700:   #10665e;
+            --teal-600:   #177e73;
+            --teal-500:   #23948a;
+            --teal-glow:  rgba(23, 126, 115, .22);
+            --clay:       #c78622;
+            --clay-soft:  #f4e1b8;
+            --ink:        #1c2b2b;
+            --ink-soft:   #5f6f6d;
+            --ink-faint:  #93a29e;
+            --line:       rgba(28, 43, 43, .12);
+            --radius:     20px;
         }
 
-        html { scroll-behavior: smooth; }
+        html { color-scheme: light; }
 
         body {
             min-height: 100vh;
-            background: var(--canvas);
-            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--paper);
+            font-family: 'Inter', sans-serif;
             color: var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 32px 24px;
+            padding: 28px;
         }
 
-        body::before {
-            content: '';
-            position: fixed; inset: 0;
-            background:
-                radial-gradient(1100px 620px at 12% -8%, rgba(23,126,115,.09), transparent 55%),
-                radial-gradient(900px 560px at 104% 108%, rgba(23,126,115,.06), transparent 55%);
-            pointer-events: none;
-        }
-
-        /* ══════════════════════════════════════════════════════════
-           SHELL
-           ══════════════════════════════════════════════════════════ */
+        /* ── Shell ─────────────────────────────────────────── */
         .shell {
-            position: relative;
-            z-index: 1;
             width: 100%;
-            max-width: 1128px;
-            min-height: 660px;
+            max-width: 1160px;
+            min-height: 640px;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 30px 70px rgba(20, 40, 38, .16);
             display: grid;
             grid-template-columns: minmax(0, 460px) 1fr;
-            background: var(--paper);
-            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow:
-                0 1px 0 rgba(20,35,34,.03),
-                0 30px 70px -24px rgba(15, 60, 55, .28);
+            position: relative;
         }
 
-        /* ══════════════════════════════════════════════════════════
-           FORM PANEL
-           ══════════════════════════════════════════════════════════ */
-        .form-panel {
-            padding: 52px 52px 44px;
+        /* ── Colonne gauche : formulaire ──────────────────── */
+        .panel-form {
+            padding: 52px 56px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 44px;
+            margin-bottom: 48px;
         }
 
         .brand__mark {
             width: 40px; height: 40px;
             border-radius: 11px;
-            background: var(--teal);
+            background: var(--teal-600);
+            color: #fff;
             display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 17px;
+            font-size: 18px;
             flex-shrink: 0;
         }
 
-        .brand__text {
+        .brand__name {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 16.5px; font-weight: 700;
-            letter-spacing: -.2px;
-            line-height: 1.15;
-        }
-        .brand__text span {
-            display: block;
-            font-size: 10.5px; font-weight: 500;
-            color: var(--ink-muted);
-            letter-spacing: 1.2px; text-transform: uppercase;
-            margin-top: 1px;
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+            color: var(--ink);
         }
 
-        .form-panel h1 {
+        .intro h1 {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 28px; font-weight: 700;
-            letter-spacing: -.7px;
-            line-height: 1.15;
+            font-size: 27px;
+            font-weight: 700;
+            letter-spacing: -.4px;
             margin-bottom: 8px;
+            color: var(--teal-900);
         }
 
-        .form-panel .lede {
-            font-size: 14px; color: var(--ink-muted);
-            line-height: 1.55;
+        .intro p {
+            font-size: 14px;
+            color: var(--ink-soft);
+            line-height: 1.6;
             margin-bottom: 30px;
-            max-width: 34ch;
+            max-width: 340px;
         }
 
         /* Alerts */
-        .alert-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .alert-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
         .alert {
-            display: flex; align-items: flex-start; gap: 9px;
-            padding: 11px 14px; border-radius: 10px;
-            font-size: 13px; line-height: 1.5;
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 11px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5;
         }
-        .alert i { margin-top: 1.5px; flex-shrink: 0; }
-        .alert--error   { background: #fbecea; color: #9c332b; border: 1px solid #f3d3ce; }
-        .alert--success { background: var(--teal-soft); color: var(--teal-deep); border: 1px solid #cfe6e2; }
+        .alert--error   { background: #fdf0ef; border: 1px solid #f3c9c4; color: #a3392f; }
+        .alert--success { background: #eef7ef; border: 1px solid #bfe3c3; color: #1f7a3c; }
 
         /* Form */
         .field { margin-bottom: 18px; }
         .field label {
             display: block;
-            font-size: 12.5px; font-weight: 600;
+            font-size: 12.5px;
+            font-weight: 600;
             color: var(--ink);
             margin-bottom: 7px;
-            letter-spacing: .1px;
         }
 
-        .field-shell { position: relative; }
-        .field-shell i.icon-lead {
-            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-            color: var(--ink-faint); font-size: 14.5px; pointer-events: none;
-            transition: color .2s var(--ease);
+        .field-shell {
+            position: relative;
+            border: 1.5px solid var(--line);
+            border-radius: 12px;
+            background: #fbfcfb;
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+        .field-shell:focus-within {
+            border-color: var(--teal-600);
+            box-shadow: 0 0 0 4px var(--teal-glow);
+            background: #fff;
+        }
+
+        .field-shell i.f-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--ink-faint); font-size: 14px; pointer-events: none;
         }
 
         .field-shell input {
             width: 100%;
-            background: #fbfdfc;
-            border: 1.5px solid var(--line);
-            border-radius: var(--radius-md);
-            padding: 13px 16px 13px 42px;
+            border: none; outline: none; background: transparent;
+            padding: 13px 14px 13px 40px;
             font-size: 14px; font-family: inherit; color: var(--ink);
-            outline: none;
-            transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
         }
         .field-shell input::placeholder { color: var(--ink-faint); }
-        .field-shell input:focus {
-            border-color: var(--teal);
-            background: #fff;
-            box-shadow: 0 0 0 4px var(--teal-glow);
-        }
-        .field-shell input:focus ~ i.icon-lead,
-        .field-shell:focus-within i.icon-lead { color: var(--teal); }
 
-        .field-shell .icon-toggle {
-            position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer;
-            color: var(--ink-faint); font-size: 14.5px; padding: 4px;
-            transition: color .2s var(--ease);
+        .f-toggle {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--ink-faint);
+            cursor: pointer; padding: 6px; font-size: 14px;
         }
-        .field-shell .icon-toggle:hover { color: var(--teal); }
+        .f-toggle:hover { color: var(--ink); }
 
         .row-between {
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 26px; gap: 12px; flex-wrap: wrap;
+            margin: 4px 0 26px; font-size: 12.5px;
         }
 
         .check {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 13px; color: var(--ink-muted);
-            cursor: pointer; user-select: none;
+            display: flex; align-items: center; gap: 7px; color: var(--ink-soft); cursor: pointer;
         }
-        .check input { accent-color: var(--teal); width: 15px; height: 15px; cursor: pointer; }
+        .check input { accent-color: var(--teal-600); width: 15px; height: 15px; }
 
-        .link { color: var(--teal); font-size: 13px; font-weight: 600; text-decoration: none; }
-        .link:hover { text-decoration: underline; }
+        .row-between a { color: var(--teal-600); text-decoration: none; font-weight: 500; }
+        .row-between a:hover { text-decoration: underline; }
 
-        .btn-submit {
+        .btn-go {
             width: 100%;
             padding: 14px;
-            background: var(--teal);
-            border: none; border-radius: var(--radius-md);
-            color: #fff; font-size: 14.5px; font-weight: 700;
+            background: var(--teal-600);
+            border: none; border-radius: 12px;
+            color: #fff; font-size: 14.5px; font-weight: 600;
             font-family: inherit; cursor: pointer;
-            letter-spacing: .2px;
             display: flex; align-items: center; justify-content: center; gap: 9px;
-            box-shadow: 0 10px 24px -8px var(--teal-glow);
-            transition: background .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+            box-shadow: 0 10px 24px var(--teal-glow);
+            transition: background .18s ease, transform .18s ease;
         }
-        .btn-submit:hover  { background: var(--teal-deep); transform: translateY(-1px); box-shadow: 0 14px 28px -8px var(--teal-glow); }
-        .btn-submit:active { transform: none; }
-        .btn-submit .spinner { display: none; }
-        .btn-submit.loading .label   { display: none; }
-        .btn-submit.loading .spinner { display: inline-flex; }
+        .btn-go:hover { background: var(--teal-700); transform: translateY(-1px); }
+        .btn-go:active { transform: none; }
+        .btn-go .spinner { display: none; }
+        .btn-go.loading .label { display: none; }
+        .btn-go.loading .spinner { display: inline-flex; }
 
-        .foot-note {
-            margin-top: auto;
-            padding-top: 30px;
-            text-align: center;
-            font-size: 13px; color: var(--ink-muted);
+        .panel-form__footer {
+            margin-top: 28px;
+            font-size: 12.5px;
+            color: var(--ink-faint);
         }
-        .foot-note a { color: var(--teal); font-weight: 700; text-decoration: none; }
-        .foot-note a:hover { text-decoration: underline; }
+        .panel-form__footer a { color: var(--teal-600); text-decoration: none; font-weight: 600; }
+        .panel-form__footer a:hover { text-decoration: underline; }
 
-        /* ══════════════════════════════════════════════════════════
-           HERO PANEL — photo réelle + guide de workflow
-           ══════════════════════════════════════════════════════════ */
-        .hero-panel {
+        /* ── Colonne droite : portrait clinique ───────────── */
+        .panel-visual {
             position: relative;
-            background:
-                linear-gradient(180deg, rgba(10,40,37,.16) 0%, rgba(8,32,30,.72) 78%, rgba(6,26,24,.90) 100%),
-                var(--teal-deep) url('/pulmocare/assets/images/doctor-login.jpg') center 18% / cover no-repeat;
+            background: linear-gradient(160deg, var(--teal-500) 0%, var(--teal-700) 55%, var(--teal-900) 100%);
+            clip-path: polygon(9% 0, 100% 0, 100% 100%, 0% 100%);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 28px 28px 26px;
-            color: #fff;
-            overflow: hidden;
+            align-items: flex-end;
+            padding: 32px 40px;
         }
 
-        /* Filet de sécurité si l'image n'est pas encore présente sur le serveur */
-        .hero-panel.hero-panel--fallback {
-            background:
-                linear-gradient(180deg, rgba(10,40,37,.10) 0%, rgba(8,32,30,.7) 100%),
-                radial-gradient(900px 600px at 20% 0%, #1c948a, var(--teal-deep) 65%);
+        .panel-visual::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: radial-gradient(circle at 22% 20%, rgba(255,255,255,.09), transparent 45%),
+                               radial-gradient(circle at 85% 85%, rgba(199,134,34,.14), transparent 50%);
+            pointer-events: none;
         }
-
-        .hero-top {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 12px;
-        }
-
-        .pill {
-            display: inline-flex; align-items: center; gap: 7px;
-            padding: 7px 13px 7px 11px;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.22);
-            backdrop-filter: blur(6px);
-            border-radius: 99px;
-            font-size: 12px; font-weight: 600; letter-spacing: .2px;
-            color: #eafaf7;
-        }
-        .pill i { font-size: 11px; color: #7fe8d8; }
 
         .lang-pill {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.22);
-            backdrop-filter: blur(6px);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11.5px; font-weight: 700; color: #eafaf7;
+            background: var(--clay-soft);
+            color: #7a5613;
+            padding: 7px 16px;
+            border-radius: 99px;
+            font-size: 12.5px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 8px;
+            border: 1px solid rgba(199,134,34,.35);
+            position: relative; z-index: 3;
         }
 
-        .hero-stat {
-            align-self: flex-start;
-            margin-top: auto;
-            margin-bottom: 18px;
-        }
-        .hero-stat__num {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 44px; font-weight: 700; letter-spacing: -1.5px;
-            line-height: 1;
-            text-shadow: 0 2px 18px rgba(0,0,0,.25);
-        }
-        .hero-stat__label {
-            font-size: 13px; color: rgba(255,255,255,.78);
-            margin-top: 6px; max-width: 30ch; line-height: 1.5;
-        }
-
-        /* ─── Guide de workflow (carrousel auto, droite → gauche) ─── */
-        .guide {
-            background: rgba(9, 32, 30, .56);
-            border: 1px solid rgba(255,255,255,.14);
-            backdrop-filter: blur(14px);
-            border-radius: 17px;
-            padding: 18px 18px 16px;
-        }
-
-        .guide__head {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .guide__head span {
-            font-size: 11px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1.1px;
-            color: rgba(255,255,255,.62);
-        }
-        .guide__dots { display: flex; gap: 6px; }
-        .guide__dot {
-            width: 16px; height: 4px; border-radius: 99px;
-            background: rgba(255,255,255,.28);
-            border: none; cursor: pointer; padding: 0;
-            transition: background .25s var(--ease), width .25s var(--ease);
-        }
-        .guide__dot.is-active { background: #fff; width: 26px; }
-
-        .guide__viewport { overflow: hidden; position: relative; height: 64px; }
-        .guide__track {
+        .visual-stage {
+            position: relative;
+            flex: 1;
+            width: 100%;
             display: flex;
-            width: 100%; height: 100%;
-            transition: transform .55s var(--ease);
+            align-items: center;
+            justify-content: center;
         }
-        .guide__slide {
-            flex: 0 0 100%;
-            display: flex; align-items: center; gap: 13px;
-        }
-        .guide__icon {
-            width: 42px; height: 42px; border-radius: 11px;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.18);
+
+        /* Anneaux façon "cible de scanner", clin d'oeil au CT Scan */
+        .scan-rings {
+            position: absolute;
+            width: 380px; height: 380px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,.18);
             display: flex; align-items: center; justify-content: center;
-            font-size: 16px; color: #fff;
-            flex-shrink: 0;
         }
-        .guide__body strong {
-            display: block; font-size: 13.5px; font-weight: 700;
-            letter-spacing: -.1px; margin-bottom: 2px;
+        .scan-rings::before, .scan-rings::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,.14);
         }
-        .guide__body p {
-            font-size: 12px; line-height: 1.4;
-            color: rgba(255,255,255,.72);
+        .scan-rings::before { width: 300px; height: 300px; }
+        .scan-rings::after  { width: 220px; height: 220px; border-color: rgba(199,134,34,.35); }
+
+        /* Portrait hexagonal */
+        .hex-frame {
+            position: relative;
+            width: 258px; height: 320px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--clay-soft);
+            box-shadow: 0 30px 60px rgba(8, 30, 27, .45);
+            z-index: 2;
+        }
+        .hex-frame img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            filter: saturate(1.02);
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .guide__track { transition: none; }
+        /* Cartes flottantes */
+        .float-card {
+            position: absolute;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(10, 30, 28, .28);
+            z-index: 4;
+            padding: 12px 14px;
         }
 
-        /* ══════════════════════════════════════════════════════════
-           RESPONSIVE
-           ══════════════════════════════════════════════════════════ */
+        .float-card--stats {
+            top: 14%; right: -6px;
+            width: 178px;
+        }
+        .float-card--stats .fc-title { font-size: 11.5px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+        .avatars { display: flex; }
+        .avatars span {
+            width: 26px; height: 26px; border-radius: 50%;
+            border: 2px solid #fff; margin-left: -8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700; color: #fff;
+        }
+        .avatars span:first-child { margin-left: 0; }
+        .avatars span:nth-child(1) { background: var(--teal-600); }
+        .avatars span:nth-child(2) { background: var(--clay); }
+        .avatars span:nth-child(3) { background: #4a607a; }
+        .avatars span:nth-child(4) { background: var(--teal-900); font-size: 9px; }
+
+        .float-card--contact {
+            bottom: 8%; left: -18px;
+            width: 208px;
+            display: flex; align-items: center; gap: 11px;
+        }
+        .float-card--contact .fc-icon {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--teal-600); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0;
+        }
+        .float-card--contact .fc-title { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+        .float-card--contact .fc-sub   { font-size: 10.5px; color: var(--ink-faint); margin-top: 2px; }
+
+        .visual-caption {
+            position: relative; z-index: 3;
+            color: rgba(255,255,255,.82);
+            font-size: 12.5px;
+            line-height: 1.6;
+            max-width: 300px;
+            align-self: flex-start;
+            margin-top: 8px;
+        }
+        .visual-caption strong { color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+
+        /* ── Responsive ────────────────────────────────────── */
         @media (max-width: 900px) {
             .shell { grid-template-columns: 1fr; max-width: 460px; min-height: 0; }
-            .hero-panel { display: none; }
-            .form-panel { padding: 40px 30px 34px; }
-        }
-        @media (max-width: 420px) {
-            .form-panel { padding: 34px 22px 28px; }
-            .form-panel h1 { font-size: 24px; }
+            .panel-visual { display: none; }
+            .panel-form { padding: 44px 32px; }
         }
     </style>
 </head>
@@ -433,25 +379,23 @@ $workflowSteps = [
 
 <div class="shell">
 
-    <!-- ═══════════ FORM PANEL ═══════════ -->
-    <div class="form-panel">
-
+    <!-- ── FORMULAIRE ─────────────────────────────────────── -->
+    <section class="panel-form">
         <div class="brand">
             <div class="brand__mark"><i class="fa-solid fa-lungs"></i></div>
-            <div class="brand__text">
-                PulmoCare IA
-                <span>Espace praticien</span>
-            </div>
+            <div class="brand__name">PulmoCare IA</div>
         </div>
 
-        <h1>Connexion</h1>
-        <p class="lede">Accédez à votre espace d'analyse CT Scan. Réservé aux médecins autorisés de la plateforme.</p>
+        <div class="intro">
+            <h1>Content de vous revoir</h1>
+            <p>Connectez-vous avec vos identifiants d'hôpital pour reprendre vos analyses là où vous les avez laissées.</p>
+        </div>
 
         <?php if (!empty($errors)): ?>
-        <div class="alert-stack">
+        <div class="alert-list">
             <?php foreach ($errors as $err): ?>
             <div class="alert alert--error" role="alert">
-                <i class="fa-solid fa-circle-exclamation"></i>
+                <i class="fa-solid fa-circle-exclamation" style="margin-top:2px"></i>
                 <span><?= htmlspecialchars($err) ?></span>
             </div>
             <?php endforeach; ?>
@@ -466,12 +410,12 @@ $workflowSteps = [
             <div class="field">
                 <label for="email">Adresse email professionnelle</label>
                 <div class="field-shell">
-                    <i class="fa-regular fa-envelope icon-lead"></i>
+                    <i class="fa-regular fa-envelope f-icon"></i>
                     <input
                         type="email"
                         id="email"
                         name="email"
-                        placeholder="dr.nom@hopital.fr"
+                        placeholder="dr.nom@hopital.cd"
                         value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                         required
                         autocomplete="email"
@@ -483,7 +427,7 @@ $workflowSteps = [
             <div class="field">
                 <label for="password">Mot de passe</label>
                 <div class="field-shell">
-                    <i class="fa-solid fa-lock icon-lead"></i>
+                    <i class="fa-solid fa-lock f-icon"></i>
                     <input
                         type="password"
                         id="password"
@@ -492,7 +436,7 @@ $workflowSteps = [
                         required
                         autocomplete="current-password"
                     >
-                    <button type="button" class="icon-toggle" id="togglePwd" aria-label="Afficher le mot de passe">
+                    <button type="button" class="f-toggle" id="togglePwd" aria-label="Afficher le mot de passe">
                         <i class="fa-regular fa-eye"></i>
                     </button>
                 </div>
@@ -503,69 +447,53 @@ $workflowSteps = [
                     <input type="checkbox" name="remember" id="remember">
                     Se souvenir de moi
                 </label>
-                <a href="/pulmocare/auth/forgot-password.php" class="link">Mot de passe oublié ?</a>
+                <a href="/pulmocare/auth/forgot-password.php">Mot de passe oublié ?</a>
             </div>
 
-            <button type="submit" class="btn-submit" id="loginBtn">
-                <span class="label"><i class="fa-solid fa-arrow-right-to-bracket"></i>&nbsp; Se connecter</span>
-                <span class="spinner"><i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Connexion…</span>
+            <button type="submit" class="btn-go" id="loginBtn">
+                <span class="label">Se connecter</span>
+                <span class="spinner"><i class="fa-solid fa-circle-notch fa-spin"></i>Connexion…</span>
             </button>
         </form>
 
-        <p class="foot-note">
+        <div class="panel-form__footer">
             Pas encore de compte ? <a href="/pulmocare/auth/register.php">Demander un accès</a>
-        </p>
-    </div>
-
-    <!-- ═══════════ HERO PANEL ═══════════ -->
-    <div class="hero-panel" id="heroPanel">
-
-        <div class="hero-top">
-            <span class="pill"><i class="fa-solid fa-circle"></i> Plateforme médicale sécurisée</span>
-            <span class="lang-pill">FR</span>
         </div>
+    </section>
 
-        <div class="hero-stat">
-            <div class="hero-stat__num">95,83%</div>
-            <div class="hero-stat__label">Précision du modèle CNN sur la classification normal / bénin / malin.</div>
-        </div>
+    <!-- ── VISUEL ──────────────────────────────────────────── -->
+    <section class="panel-visual">
+        <span class="lang-pill">Français (FR) <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></span>
 
-        <div class="guide">
-            <div class="guide__head">
-                <span>Comment ça marche</span>
-                <div class="guide__dots" id="guideDots"></div>
+        <div class="visual-stage">
+            <div class="scan-rings"></div>
+
+            <div class="hex-frame">
+                <img src="/pulmocare/assets/images/doctorlung.jpg" alt="Médecin de la plateforme PulmoCare IA" onerror="this.style.display='none'">
             </div>
-            <div class="guide__viewport">
-                <div class="guide__track" id="guideTrack">
-                    <?php foreach ($workflowSteps as $step): ?>
-                    <div class="guide__slide">
-                        <div class="guide__icon"><i class="<?= htmlspecialchars($step['icon']) ?>"></i></div>
-                        <div class="guide__body">
-                            <strong><?= htmlspecialchars($step['title']) ?></strong>
-                            <p><?= htmlspecialchars($step['text']) ?></p>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+
+            <!-- <div class="float-card float-card--stats">
+                <div class="fc-title">+500 analyses ce mois</div>
+                <div class="avatars">
+                    <span>DR</span><span>SK</span><span>ML</span><span>+8</span>
                 </div>
-            </div>
+            </div> -->
+
+            <!-- <div class="float-card float-card--contact">
+                <div class="fc-icon"><i class="fa-solid fa-comment-medical"></i></div>
+                <div>
+                    <div class="fc-title">Avis d'un confrère</div>
+                    <div class="fc-sub">Second regard en un clic</div>
+                </div>
+            </div> -->
         </div>
 
-    </div>
+        <p class="visual-caption"><strong>Une lecture assistée, jamais seule.</strong> Chaque scan reste sous votre œil avant toute décision.</p>
+    </section>
 
 </div>
 
 <script>
-    // ── Vérifie que la photo du médecin est bien présente ──────
-    // (si le fichier n'a pas encore été déposé côté serveur, on
-    //  bascule sur un dégradé teal pour ne jamais casser la mise en page)
-    (function checkHeroImage() {
-        const hero = document.getElementById('heroPanel');
-        const img  = new Image();
-        img.onerror = () => hero.classList.add('hero-panel--fallback');
-        img.src = '/pulmocare/assets/images/doctor-login.jpg';
-    })();
-
-    // ── Toggle mot de passe ──────────────────────────────────────
     const toggleBtn = document.getElementById('togglePwd');
     const pwdInput  = document.getElementById('password');
     toggleBtn.addEventListener('click', () => {
@@ -574,7 +502,6 @@ $workflowSteps = [
         toggleBtn.querySelector('i').className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
     });
 
-    // ── État de chargement au submit ─────────────────────────────
     const form = document.getElementById('loginForm');
     const btn  = document.getElementById('loginBtn');
     form.addEventListener('submit', () => {
@@ -584,54 +511,6 @@ $workflowSteps = [
         btn.classList.add('loading');
         btn.disabled = true;
     });
-
-    // ── Guide de workflow : carrousel auto, glisse de droite à gauche ──
-    (function initGuide() {
-        const track = document.getElementById('guideTrack');
-        const dotsWrap = document.getElementById('guideDots');
-        if (!track) return;
-
-        const slides = Array.from(track.children);
-        const dots = slides.map((_, i) => {
-            const b = document.createElement('button');
-            b.className = 'guide__dot' + (i === 0 ? ' is-active' : '');
-            b.setAttribute('aria-label', 'Étape ' + (i + 1));
-            b.addEventListener('click', () => goTo(i, true));
-            dotsWrap.appendChild(b);
-            return b;
-        });
-
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let index = 0;
-        let timer = null;
-
-        function render() {
-            track.style.transform = `translateX(-${index * 100}%)`;
-            dots.forEach((d, i) => d.classList.toggle('is-active', i === index));
-        }
-
-        function goTo(i, manual) {
-            index = (i + slides.length) % slides.length;
-            render();
-            if (manual) restart();
-        }
-
-        function next() { goTo(index + 1); }
-
-        function start() {
-            if (reduceMotion || slides.length < 2) return;
-            timer = setInterval(next, 3400);
-        }
-        function stop() { if (timer) clearInterval(timer); }
-        function restart() { stop(); start(); }
-
-        const guideEl = track.closest('.guide');
-        guideEl.addEventListener('mouseenter', stop);
-        guideEl.addEventListener('mouseleave', start);
-
-        render();
-        start();
-    })();
 </script>
 </body>
 </html>

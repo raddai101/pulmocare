@@ -17,7 +17,7 @@ $uploadedGradcamUrl = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!security_verify_csrf($_POST['_token'] ?? '')) {
-        $errors[] = 'Jeton de sÃ©curitÃ© invalide. Veuillez rÃ©essayer.';
+        $errors[] = 'Jeton de sécurit. invalide. Veuillez réessayer.';
     } else {
 
         // 1. Validation des donnÃ©es patient
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. Validation et upload du scan
         if (empty($errors)) {
             if (empty($_FILES['scan_file']['tmp_name'])) {
-                $errors[] = 'Veuillez sÃ©lectionner une image CT Scan.';
+                $errors[] = 'Veuillez sélectionner une image CT Scan.';
             } else {
                 $scanResult = scan_upload($_FILES['scan_file'], $userId);
 
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 log_activity('detection_completed', ['user_id' => $userId, 'detection_id' => $detectionId]);
                             }
                         } else {
-                            $errors[] = 'Erreur lors de la sauvegarde des rÃ©sultats.';
+                            $errors[] = 'Erreur lors de la sauvegarde des résultats.';
                         }
                     }
                 }
@@ -116,6 +116,8 @@ $currentFile = basename(__FILE__);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/pulmocare/assets/css/style.css">
     <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
+    <link rel="stylesheet" href="/pulmocare/assets/css/detection.css">
+
     <!-- util: garder le style global (inline) — suppression de la feuille claire spécifique -->
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,7 +131,7 @@ $currentFile = basename(__FILE__);
         }
         body { background: var(--bg-base); color: var(--text-1); font-family: 'Inter', sans-serif; display: flex; min-height: 100vh; }
 
-        /* â”€ Sidebar reuse (same as dashboard) â”€ */
+        /* â”€ Sidebar reuse (same as dashboard)*/
         .sidebar { width: var(--sidebar-w); background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
         .sidebar__logo { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
         .sidebar__logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg,var(--blue-500),var(--indigo)); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 19px; box-shadow: 0 4px 14px var(--blue-glow); }
