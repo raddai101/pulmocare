@@ -13,14 +13,14 @@ $detectionId     = null;
 $uploadedImageUrl = null;
 $uploadedGradcamUrl = null;
 
-// â”€â”€ Traitement upload + prÃ©diction IA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Traitement upload + prédiction IA ─────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!security_verify_csrf($_POST['_token'] ?? '')) {
-        $errors[] = 'Jeton de sÃ©curitÃ© invalide. Veuillez rÃ©essayer.';
+        $errors[] = 'Jeton de sécurité invalide. Veuillez réessayer.';
     } else {
 
-        // 1. Validation des donnÃ©es patient
+        // 1. Validation des données patient
         $patientData = [
             'nom'    => $_POST['patient_nom']    ?? '',
             'prenom' => $_POST['patient_prenom'] ?? '',
@@ -45,14 +45,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. Validation et upload du scan
         if (empty($errors)) {
             if (empty($_FILES['scan_file']['tmp_name'])) {
-                $errors[] = 'Veuillez sÃ©lectionner une image CT Scan.';
+                $errors[] = 'Veuillez sélectionner une image CT Scan.';
             } else {
                 $scanResult = scan_upload($_FILES['scan_file'], $userId);
 
                 if (!$scanResult['success']) {
                     $errors[] = $scanResult['message'];
                 } else {
-                    // 3. PrÃ©diction IA
+                    // 3. Prédiction IA
                     $aiResponse = ai_predict($scanResult['path']);
 
                     if (!$aiResponse['success']) {
@@ -88,12 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if ($existing && !empty($existing['image_path'])) {
                                     $uploadedImageUrl = $existing['image_path'];
                                 }
-                                html_set_flash('info', 'Ce scan a dÃ©jÃ  Ã©tÃ© analysÃ©. RÃ©sultats prÃ©cÃ©dents affichÃ©s.');
+                                html_set_flash('info', 'Ce scan a déjà été analysé. Résultats précédents affichés.');
                             } else {
                                 log_activity('detection_completed', ['user_id' => $userId, 'detection_id' => $detectionId]);
                             }
                         } else {
-                            $errors[] = 'Erreur lors de la sauvegarde des rÃ©sultats.';
+                            $errors[] = 'Erreur lors de la sauvegarde des résultats.';
                         }
                     }
                 }
@@ -116,7 +116,6 @@ $currentFile = basename(__FILE__);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/pulmocare/assets/css/style.css">
     <link rel="stylesheet" href="/pulmocare/assets/css/human-clinic.css">
-    <!-- util: garder le style global (inline) — suppression de la feuille claire spécifique -->
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -129,7 +128,6 @@ $currentFile = basename(__FILE__);
         }
         body { background: var(--bg-base); color: var(--text-1); font-family: 'Inter', sans-serif; display: flex; min-height: 100vh; }
 
-        /* â”€ Sidebar reuse (same as dashboard) â”€ */
         .sidebar { width: var(--sidebar-w); background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
         .sidebar__logo { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
         .sidebar__logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg,var(--blue-500),var(--indigo)); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 19px; box-shadow: 0 4px 14px var(--blue-glow); }
@@ -148,27 +146,23 @@ $currentFile = basename(__FILE__);
         .sidebar__user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar__user-role { font-size: 11px; color: var(--text-2); }
 
-        /* â”€ Main layout â”€ */
         .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         .topbar { height: var(--header-h); background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 50; }
         .topbar h2 { font-family: 'Space Grotesk',sans-serif; font-size: 19px; font-weight: 600; letter-spacing: -.3px; }
         .topbar p { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
         .content { padding: 32px; flex: 1; max-width: 1000px; }
 
-        /* â”€ Alert â”€ */
         .alert { display: flex; align-items: flex-start; gap: 10px; padding: 14px 18px; border-radius: 10px; font-size: 13.5px; margin-bottom: 20px; }
         .alert--error   { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #f87171; }
         .alert--success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25); color: #4ade80; }
         .alert--info    { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: #60a5fa; }
 
-        /* â”€ Form card â”€ */
         .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
         .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
         .card-header h3 { font-family: 'Space Grotesk',sans-serif; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .card-header p  { font-size: 13px; color: var(--text-2); margin-top: 4px; }
         .card-body { padding: 24px; }
 
-        /* â”€ Form grid â”€ */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
         .form-full { grid-column: 1 / -1; }
@@ -179,7 +173,6 @@ $currentFile = basename(__FILE__);
         .form-control:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--blue-glow); }
         select.form-control { cursor: pointer; }
 
-        /* â”€ Drop zone â”€ */
         .drop-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius);
@@ -210,12 +203,10 @@ $currentFile = basename(__FILE__);
         .file-preview__size { font-size: 12px; color: var(--text-2); margin-top: 2px; }
         .file-preview__remove { color: var(--red); cursor: pointer; background: none; border: none; font-size: 18px; padding: 4px; }
 
-        /* â”€ Buttons â”€ */
         .btn-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: linear-gradient(135deg, var(--blue-500), var(--indigo)); border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity var(--tr), transform var(--tr); box-shadow: 0 4px 20px var(--blue-glow); margin-top: 8px; }
         .btn-submit:hover { opacity: .9; transform: translateY(-1px); }
         .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-        /* â”€ RESULT PANEL â”€ */
         .result-panel { display: none; }
         .result-panel.show { display: block; animation: slideUp .4s ease; }
 
@@ -266,9 +257,6 @@ $currentFile = basename(__FILE__);
         .btn-action--primary { background: linear-gradient(135deg, var(--blue-500), var(--indigo)); border: none; box-shadow: 0 4px 14px var(--blue-glow); color: #fff; }
         .btn-action--primary:hover { color: #fff; opacity: .9; }
 
-        /* Repli visuel quand le navigateur ne peut pas décoder le fichier
-           (DICOM / TIFF) : l'image reste envoyée et analysée normalement,
-           seul l'aperçu local n'est pas disponible. */
         #scanPreviewImg.is-fallback,
         #previewImg.is-fallback {
             opacity: .5;
@@ -282,9 +270,6 @@ $currentFile = basename(__FILE__);
             .form-grid, .form-grid.three, .result-main { grid-template-columns: 1fr; }
         }
 
-        /* ============================================================
-           WORKFLOW — slideshow simple (.wf-*)
-           ============================================================ */
         .wf-slideshow {
             position: relative;
             overflow: hidden;
@@ -346,13 +331,13 @@ $currentFile = basename(__FILE__);
         <a href="/pulmocare/pages/resultats.php" class="nav-link"><i class="fa-solid fa-folder-open"></i> Mes analyses</a>
         <span class="nav-section-label">Compte</span>
         <a href="/pulmocare/pages/profil.php" class="nav-link"><i class="fa-solid fa-user-doctor"></i> Mon profil</a>
-        <a href="/pulmocare/auth/logout.php" class="nav-link" onclick="return confirm('Se dÃ©connecter ?')"><i class="fa-solid fa-right-from-bracket"></i> DÃ©connexion</a>
+        <a href="/pulmocare/auth/logout.php" class="nav-link" onclick="return confirm('Se déconnecter ?')"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
     </nav>
     <div class="sidebar__user">
         <img src="<?= htmlspecialchars(html_avatar_url($user['avatar'] ?? null)) ?>" alt="Avatar" class="sidebar__avatar">
         <div class="sidebar__user-info">
             <div class="sidebar__user-name">Dr. <?= htmlspecialchars($user['prenom'] . ' ' . $user['nom']) ?></div>
-            <div class="sidebar__user-role"><?= htmlspecialchars($user['specialite'] ?? 'MÃ©decin') ?></div>
+            <div class="sidebar__user-role"><?= htmlspecialchars($user['specialite'] ?? 'Médecin') ?></div>
         </div>
     </div>
 </aside>
@@ -384,9 +369,9 @@ $currentFile = basename(__FILE__);
             ?>
             <div class="wf-slideshow__stage">
                 <?php foreach ($wfSlides as $i => $slide): ?>
-                <figure class="wf-slide<?= $i === 0 ? ' is-active' : '' ?>" data-index="<?= $i ?>">
+                <figure class="wf-slide<?= $i === 0 ? ' is-active' : '' ?>" data-index="<?= (int)$i ?>">
                     <img src="<?= htmlspecialchars(scan_get_url($slide['src'])) ?>" alt="<?= htmlspecialchars($slide['alt']) ?>" loading="<?= $i === 0 ? 'eager' : 'lazy' ?>">
-                    <figcaption class="wf-slide__label"><?= htmlspecialchars($i + 1) ?>. <?= htmlspecialchars($slide['label']) ?></figcaption>
+                    <figcaption class="wf-slide__label"><?= htmlspecialchars((string)($i + 1)) ?>. <?= htmlspecialchars($slide['label']) ?></figcaption>
                 </figure>
                 <?php endforeach; ?>
             </div>
@@ -472,7 +457,7 @@ $currentFile = basename(__FILE__);
                         <span class="meta-item__value" style="font-size:14px">
                             <?= htmlspecialchars(($_POST['patient_prenom'] ?? '') . ' ' . ($_POST['patient_nom'] ?? '')) ?>
                             <?php if (!empty($_POST['patient_age'])): ?>
-                            <span style="color:var(--text-2);font-weight:400;font-size:13px">â€” <?= (int)$_POST['patient_age'] ?> ans</span>
+                            <span style="color:var(--text-2);font-weight:400;font-size:13px">— <?= (int)$_POST['patient_age'] ?> ans</span>
                             <?php endif; ?>
                         </span>
                     </div>
@@ -540,7 +525,7 @@ $currentFile = basename(__FILE__);
                         <div class="form-group">
                             <label class="form-label" for="patient_code">Code patient</label>
                             <input type="text" id="patient_code" name="patient_code" class="form-control"
-                                placeholder="Code ou numÃ©ro dossier (optionnel)"
+                                placeholder="Code ou numéro dossier (optionnel)"
                                 value="<?= htmlspecialchars($_POST['patient_code'] ?? '') ?>">
                         </div>
                     </div>
@@ -621,16 +606,8 @@ $currentFile = basename(__FILE__);
 
     if (!dropZone) return;
 
-    // Formats que TOUS les navigateurs savent décoder et afficher dans une
-    // balise <img>. Le DICOM (.dcm) et souvent le TIFF (.tif/.tiff) n'en
-    // font pas partie : impossible de les "afficher" côté client quel que
-    // soit le procédé (FileReader ou ObjectURL) — le navigateur ne sait
-    // simplement pas les décoder. On le montre alors clairement plutôt que
-    // de laisser une image cassée ou une zone vide.
     const RENDERABLE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'bmp'];
 
-    // URL locale (blob:) créée pour l'aperçu en cours — révoquée à chaque
-    // changement pour ne pas accumuler de mémoire (bonne pratique).
     let currentObjectUrl = null;
 
     function formatSize(bytes) {
@@ -643,8 +620,6 @@ $currentFile = basename(__FILE__);
     }
 
     function isRenderable(file) {
-        // On se fie d'abord à l'extension (fiable pour dcm/tiff, contrairement
-        // à file.type qui est souvent une chaîne vide pour ces formats).
         return RENDERABLE_EXT.includes(getExt(file.name));
     }
 
@@ -665,8 +640,6 @@ $currentFile = basename(__FILE__);
         releaseObjectUrl();
 
         if (isRenderable(file)) {
-            // Aperçu instantané : ObjectURL est créé en mémoire, sans lecture
-            // ni encodage base64 — c'est immédiat, contrairement à FileReader.
             currentObjectUrl = URL.createObjectURL(file);
 
             if (previewImg) {
@@ -682,9 +655,6 @@ $currentFile = basename(__FILE__);
                 scanPreviewImg.classList.remove('is-fallback');
             }
         } else {
-            // Format non décodable par le navigateur (DICOM, certains TIFF) :
-            // on l'assume clairement au lieu de laisser une image cassée.
-            // Le fichier sera néanmoins bien envoyé et analysé normalement.
             const placeholder = previewImg ? previewImg.dataset.placeholder : '';
             if (previewImg) {
                 previewImg.src = placeholder || previewImg.src;
@@ -724,7 +694,6 @@ $currentFile = basename(__FILE__);
     removeBtn?.addEventListener('click', clearFile);
     removeBtnInZone?.addEventListener('click', clearFile);
 
-    // Drag & drop
     ['dragenter', 'dragover'].forEach(e => {
         dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); });
     });
@@ -741,10 +710,8 @@ $currentFile = basename(__FILE__);
         }
     });
 
-    // Nettoyage mémoire si l'utilisateur quitte/rafraîchit la page
     window.addEventListener('pagehide', releaseObjectUrl);
 
-    // Loading state
     form?.addEventListener('submit', () => {
         if (submitBtn) submitBtn.disabled = true;
         const btnText = document.getElementById('btnText');
