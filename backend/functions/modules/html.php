@@ -53,7 +53,13 @@ function html_active_class(string $page, string $current, string $class = 'activ
 function html_avatar_url(?string $avatar): string
 {
     if ($avatar) {
-        $projectRoot = dirname(__DIR__, 2);
+        // BUGFIX : depuis backend/functions/modules/, il faut remonter 3 niveaux
+        // (modules -> functions -> backend -> racine du projet), pas 2.
+        // Avec dirname(__DIR__, 2) ce contrôle pointait vers backend/assets/...,
+        // qui n'existe jamais : file_exists() renvoyait donc toujours false et
+        // l'avatar par défaut s'affichait même quand le vrai fichier existait bien
+        // sur le disque (dans /assets/uploads/avatars/).
+        $projectRoot = dirname(__DIR__, 3);
         $fullPath = $projectRoot . '/' . ltrim($avatar, '/');
         if (file_exists($fullPath)) {
             $path = '/' . ltrim($avatar, '/');
@@ -64,7 +70,7 @@ function html_avatar_url(?string $avatar): string
             return $path;
         }
     }
-    $default = '/assets/images/default-avatar.svg';
+    $default = '/assets/images/utilisateur.png';
     $appPath = parse_url((string)env('APP_URL', ''), PHP_URL_PATH) ?: '';
     if ($appPath && $appPath !== '/' && !str_starts_with($default, rtrim($appPath, '/') . '/')) {
         return rtrim($appPath, '/') . $default;

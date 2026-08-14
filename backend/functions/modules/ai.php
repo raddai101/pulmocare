@@ -176,7 +176,10 @@ function ai_save_gradcam(?string $base64, int $userId): ?string
         $base64 = $parts[1] ?? $base64;
     }
 
-    $projectRoot = dirname(__DIR__, 2);
+    // BUGFIX : depuis backend/functions/modules/, il faut remonter 3 niveaux
+    // (modules -> functions -> backend -> racine du projet), pas 2, pour
+    // atteindre le vrai dossier /assets/ servi publiquement.
+    $projectRoot = dirname(__DIR__, 3);
     $uploadDir = $projectRoot . '/assets/uploads/scans/gradcam/' . date('Y/m/') . $userId . '/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
     $filename = 'gradcam_' . bin2hex(random_bytes(6)) . '.jpg';

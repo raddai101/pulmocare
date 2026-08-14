@@ -82,13 +82,39 @@ function user_update_profile(int $userId, array $data): array
     return ['success' => true, 'message' => 'Profil mis à jour avec succès.'];
 }
 
+/**
+ * Met à jour l'avatar d'un médecin.
+ *
+ * BUGFIX (par rapport à la version précédente) :
+ *  - vérifie le code d'erreur PHP d'upload avant toute chose (fichier trop
+ *    gros pour php.ini, upload interrompu, etc.) au lieu de suivre en
+ *    silence avec un tmp_name potentiellement invalide ;
+ *  - vérifie que le fichier est bien une vraie soumission HTTP
+ *    (is_uploaded_file) ;
+ *  - construit le chemin projet avec dirname(__DIR__, 3) — cohérent avec
+ *    html_avatar_url() désormais corrigé lui aussi — au lieu d'une chaîne
+ *    littérale '../../../' qui, elle, était correcte mais divergente ;
+ *  - journalise précisément la cause d'un échec (mkdir, droits d'écriture,
+ *    move_uploaded_file) pour un diagnostic rapide côté logs ;
+ *  - supprime l'ancien fichier avatar physique lors du remplacement, pour
+ *    ne pas accumuler des images orphelines sur le disque.
+ */
 function user_update_avatar(int $userId, array $file): array
 {
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        log_error('avatar_upload_error_code', ['user_id' => $userId, 'code' => $file['error'] ?? null]);
+        return ['success' => false, 'message' => "Échec de l'envoi du fichier (upload interrompu ou trop volumineux)."];
+    }
+
     $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
     $maxSize      = 2 * 1024 * 1024;
 
-    if ($file['size'] > $maxSize) {
+    if (($file['size'] ?? 0) > $maxSize) {
         return ['success' => false, 'message' => 'Image trop lourde (max 2 Mo).'];
+    }
+
+    if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        return ['success' => false, 'message' => 'Fichier invalide ou non reçu.'];
     }
 
     $finfo    = new \finfo(FILEINFO_MIME_TYPE);
@@ -98,33 +124,56 @@ function user_update_avatar(int $userId, array $file): array
         return ['success' => false, 'message' => 'Format non autorisé (JPG, PNG, WEBP uniquement).'];
     }
 
-    $ext      = match ($realMime) {
+    $ext = match ($realMime) {
         'image/jpeg' => 'jpg',
         'image/png'  => 'png',
         'image/webp' => 'webp',
         default      => 'jpg',
     };
 
-    $filename  = 'avatar_' . $userId . '_' . time() . '.' . $ext;
-    $uploadDir = __DIR__ . '/../../../assets/uploads/avatars/';
+    $filename    = 'avatar_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+    $projectRoot = dirname(__DIR__, 3); // modules -> functions -> backend -> racine projet
+    $uploadDir   = $projectRoot . '/assets/uploads/avatars/';
 
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+        log_error('avatar_mkdir_failed', ['user_id' => $userId, 'dir' => $uploadDir]);
+        return ['success' => false, 'message' => "Impossible de créer le dossier d'upload sur le serveur."];
     }
 
-    if (!move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-        return ['success' => false, 'message' => 'Échec du téléchargement de l\'avatar.'];
+    if (!is_writable($uploadDir)) {
+        log_error('avatar_dir_not_writable', ['user_id' => $userId, 'dir' => $uploadDir]);
+        return ['success' => false, 'message' => "Le dossier d'upload n'est pas accessible en écriture (droits serveur)."];
     }
 
-    $userModel = new User();
-    $userModel->updateAvatar($userId, '/assets/uploads/avatars/' . $filename);
+    $fullPath = $uploadDir . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
+        log_error('avatar_move_failed', ['user_id' => $userId, 'target' => $fullPath]);
+        return ['success' => false, 'message' => "Échec du téléchargement de l'avatar."];
+    }
+
+    $userModel  = new User();
+    $previous   = $userModel->findById($userId);
+    $avatarPath = '/assets/uploads/avatars/' . $filename;
+
+    $userModel->updateAvatar($userId, $avatarPath);
+
+    // Nettoyage : supprime l'ancien fichier avatar physique s'il existait.
+    if (!empty($previous['avatar']) && $previous['avatar'] !== $avatarPath) {
+        $oldFile = $projectRoot . '/' . ltrim((string)$previous['avatar'], '/');
+        if (is_file($oldFile)) {
+            @unlink($oldFile);
+        }
+    }
 
     $updated = $userModel->findById($userId);
     if ($updated) {
         SessionManager::setUser($updated);
     }
 
-    return ['success' => true, 'message' => 'Avatar mis à jour.', 'avatar' => '/assets/uploads/avatars/' . $filename];
+    log_activity('avatar_updated', ['user_id' => $userId, 'file' => $filename]);
+
+    return ['success' => true, 'message' => 'Avatar mis à jour.', 'avatar' => $avatarPath];
 }
 
 function user_change_password(int $userId, string $currentPwd, string $newPwd, string $confirmation): array

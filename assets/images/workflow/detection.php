@@ -266,15 +266,6 @@ $currentFile = basename(__FILE__);
         .btn-action--primary { background: linear-gradient(135deg, var(--blue-500), var(--indigo)); border: none; box-shadow: 0 4px 14px var(--blue-glow); color: #fff; }
         .btn-action--primary:hover { color: #fff; opacity: .9; }
 
-        /* Repli visuel quand le navigateur ne peut pas décoder le fichier
-           (DICOM / TIFF) : l'image reste envoyée et analysée normalement,
-           seul l'aperçu local n'est pas disponible. */
-        #scanPreviewImg.is-fallback,
-        #previewImg.is-fallback {
-            opacity: .5;
-            filter: grayscale(.4);
-        }
-
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .main { margin-left: 0; }
@@ -283,51 +274,157 @@ $currentFile = basename(__FILE__);
         }
 
         /* ============================================================
-           WORKFLOW — slideshow simple (.wf-*)
+           WORKFLOW CINÉMATIQUE (.wf-*) — zone remplaçant l'ancien
+           bloc .human-strip--detection. Auto-contenu, ne touche à
+           rien d'autre sur la page.
            ============================================================ */
-        .wf-slideshow {
+        .wf-cinema {
             position: relative;
+            isolation: isolate;
             overflow: hidden;
-            border-radius: 16px;
+            border-radius: 18px;
+            min-height: 420px;
             margin-bottom: 24px;
-            box-shadow: 0 14px 34px rgba(4, 10, 22, .35), 0 0 0 1px rgba(59,130,246,.10);
-        }
-        .wf-slideshow__stage {
-            position: relative;
-            width: 100%;
-            height: clamp(220px, 32vw, 340px);
-        }
-        .wf-slide {
-            position: absolute; inset: 0;
-            opacity: 0;
-            transition: opacity .35s ease;
-        }
-        .wf-slide.is-active { opacity: 1; }
-        .wf-slide img {
-            width: 100%; height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .wf-slide__label {
-            position: absolute;
-            left: 16px; bottom: 14px;
-            padding: 7px 14px;
-            border-radius: 99px;
-            background: rgba(6, 13, 26, .62);
-            backdrop-filter: blur(4px);
-            color: #fff;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: .2px;
+            background: #060d1a;
+            box-shadow: 0 20px 50px rgba(4, 10, 22, .45), 0 0 0 1px rgba(59,130,246,.10);
         }
 
+        /* â”€â”€ Piste d'images qui dÃ©file en continu, de la droite vers la gauche â”€â”€ */
+        .wf-cinema__track {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            width: max-content;
+            height: 100%;
+            animation: wfMarquee 46s linear infinite;
+            will-change: transform;
+        }
+        .wf-cinema__slide {
+            position: relative;
+            flex: 0 0 auto;
+            width: clamp(220px, 26vw, 380px);
+            height: 100%;
+            margin-right: 4px;
+            overflow: hidden;
+        }
+        .wf-cinema__slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: saturate(1.05) contrast(1.03);
+            transform: scale(1.02);
+        }
+        @keyframes wfMarquee {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+        .wf-cinema:hover .wf-cinema__track { animation-play-state: paused; }
+
+        /* â”€â”€ Voile sombre pour la lisibilitÃ© du texte au premier plan â”€â”€ */
+        .wf-cinema__scrim {
+            position: absolute; inset: 0;
+            background:
+                linear-gradient(90deg, rgba(4,9,19,.94) 0%, rgba(4,9,19,.86) 32%, rgba(4,9,19,.52) 62%, rgba(4,9,19,.28) 100%),
+                linear-gradient(180deg, rgba(4,9,19,.35) 0%, rgba(4,9,19,.15) 30%, rgba(4,9,19,.55) 100%);
+            pointer-events: none;
+        }
+
+        /* â”€â”€ Contenu premier plan â”€â”€ */
+        .wf-cinema__content {
+            position: relative;
+            z-index: 2;
+            padding: 40px 40px 32px;
+            min-height: 420px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 620px;
+        }
+
+        .wf-cinema__eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            align-self: flex-start;
+            font-size: 12px; font-weight: 700;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            color: #93c5fd;
+            background: rgba(59,130,246,.14);
+            border: 1px solid rgba(59,130,246,.3);
+            padding: 7px 14px; border-radius: 99px;
+            margin-bottom: 22px;
+        }
+
+        .wf-cinema__stage { position: relative; min-height: 168px; }
+
+        .wf-step {
+            position: absolute; inset: 0;
+            opacity: 0; visibility: hidden;
+            transform: translateY(14px);
+            transition: opacity .55s cubic-bezier(.4,0,.2,1), transform .55s cubic-bezier(.4,0,.2,1), visibility 0s linear .55s;
+        }
+        .wf-step.is-active {
+            position: relative;
+            opacity: 1; visibility: visible;
+            transform: none;
+            transition: opacity .55s cubic-bezier(.4,0,.2,1), transform .55s cubic-bezier(.4,0,.2,1);
+        }
+
+        .wf-step__num {
+            display: inline-block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px; font-weight: 700;
+            color: var(--blue-500);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        .wf-step__num::before { content: 'ÉTAPE '; color: rgba(255,255,255,.4); font-weight: 600; }
+
+        .wf-step__title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(24px, 3vw, 32px);
+            font-weight: 700;
+            letter-spacing: -.5px;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .wf-step__text {
+            font-size: 14.5px;
+            line-height: 1.65;
+            color: rgba(232,237,248,.82);
+            max-width: 46ch;
+        }
+
+        .wf-cinema__nav {
+            display: flex; gap: 8px;
+            margin-top: 28px;
+        }
+        .wf-dot {
+            width: 30px; height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,.22);
+            border: none; padding: 0; cursor: pointer;
+            transition: background .25s ease, width .25s ease;
+        }
+        .wf-dot.is-active { background: var(--blue-500); width: 46px; box-shadow: 0 0 12px rgba(59,130,246,.6); }
+        .wf-dot:hover { background: rgba(255,255,255,.4); }
+
+        @media (max-width: 900px) {
+            .wf-cinema__content { max-width: 100%; padding: 32px 24px 26px; }
+            .wf-cinema__scrim {
+                background:
+                    linear-gradient(180deg, rgba(4,9,19,.55) 0%, rgba(4,9,19,.72) 55%, rgba(4,9,19,.94) 100%);
+            }
+        }
         @media (max-width: 560px) {
-            .wf-slideshow__stage { height: 220px; }
-            .wf-slide__label { font-size: 12px; padding: 6px 12px; }
+            .wf-cinema { min-height: 380px; }
+            .wf-cinema__content { min-height: 380px; padding: 26px 18px 22px; }
+            .wf-cinema__stage { min-height: 200px; }
         }
         @media (prefers-reduced-motion: reduce) {
-            .wf-slide { transition: opacity .15s ease; }
+            .wf-cinema__track { animation: none; }
+            .wf-step { transition: opacity .3s ease; }
         }
     </style>
 </head>
@@ -369,29 +466,75 @@ $currentFile = basename(__FILE__);
     <main class="content">
 
         <!-- ============================================================
-             WORKFLOW — slideshow simple, une image plein cadre à la fois,
-             changement rapide en fondu, légende courte en bas.
+             WORKFLOW CINÉMATIQUE — bande défilante (droite → gauche)
+             Texte des étapes au premier plan, photos en arrière-plan.
+             Ne dépend d'aucun autre style de la page — tout est scopé "wf-".
              ============================================================ -->
-        <section class="wf-slideshow" id="wfSlideshow" aria-label="Comment se déroule une analyse PulmoCare IA" data-interval="1600">
-            <?php
-            $wfSlides = [
-                ['src' => '/assets/images/workflow/dossier-patient.jpg',    'alt' => 'Constitution du dossier patient',   'label' => 'Dossier patient'],
-                ['src' => '/assets/images/workflow/acquisition-scan.jpg',   'alt' => 'Acquisition de l\'image CT Scan',   'label' => 'Acquisition du scan'],
-                ['src' => '/assets/images/workflow/analyse-cnn.jpg',        'alt' => 'Analyse par le réseau CNN',         'label' => 'Analyse CNN'],
-                ['src' => '/assets/images/workflow/lecture-medicale.jpg',   'alt' => 'Lecture et interprétation médicale','label' => 'Lecture médicale'],
-                ['src' => '/assets/images/workflow/rapport-validation.jpg', 'alt' => 'Rapport et validation clinique',    'label' => 'Rapport & validation'],
-            ];
-            ?>
-            <div class="wf-slideshow__stage">
-                <?php foreach ($wfSlides as $i => $slide): ?>
-                <figure class="wf-slide<?= $i === 0 ? ' is-active' : '' ?>" data-index="<?= $i ?>">
-                    <img src="<?= htmlspecialchars(scan_get_url($slide['src'])) ?>" alt="<?= htmlspecialchars($slide['alt']) ?>" loading="<?= $i === 0 ? 'eager' : 'lazy' ?>">
-                    <figcaption class="wf-slide__label"><?= htmlspecialchars($i + 1) ?>. <?= htmlspecialchars($slide['label']) ?></figcaption>
+        <section class="wf-cinema" id="wfCinema" aria-label="Comment se déroule une analyse PulmoCare IA" data-autoplay="4600">
+
+            <!-- Piste d'images en dÃ©filement continu (arriÃ¨re-plan) -->
+            <div class="wf-cinema__track" id="wfTrack" aria-hidden="true">
+                <?php
+                // Chaque slide est reliée à une étape du workflow (mêmes index que .wf-step)
+                $wfSlides = [
+                    ['src' => '/assets/images/workflow/dossier-patient.jpg',        'alt' => 'Constitution du dossier patient'],
+                    ['src' => '/assets/images/workflow/acquisition-scan.jpg',       'alt' => 'Acquisition de l\'image CT Scan'],
+                    ['src' => '/assets/images/workflow/analyse-cnn.jpg',            'alt' => 'Analyse par le réseau de neurones CNN'],
+                    ['src' => '/assets/images/workflow/lecture-medicale.jpg',       'alt' => 'Lecture et interprétation médicale'],
+                    ['src' => '/assets/images/workflow/rapport-validation.jpg',     'alt' => 'Rapport et validation clinique'],
+                ];
+                // La piste est doublée pour permettre un dÃ©filement continu et sans coupure
+                foreach (array_merge($wfSlides, $wfSlides) as $slide): ?>
+                <figure class="wf-cinema__slide">
+                    <img src="<?= htmlspecialchars(scan_get_url($slide['src'])) ?>" alt="<?= htmlspecialchars($slide['alt']) ?>" loading="lazy">
                 </figure>
                 <?php endforeach; ?>
             </div>
-        </section>
 
+            <!-- Voile de contraste pour la lisibilitÃ© du texte -->
+            <div class="wf-cinema__scrim"></div>
+
+            <!-- Contenu au premier plan -->
+            <div class="wf-cinema__content">
+                <div class="wf-cinema__eyebrow"><i class="fa-solid fa-diagram-project"></i> Comment se déroule une analyse</div>
+
+                <div class="wf-cinema__stage" id="wfStage">
+                    <article class="wf-step is-active" data-step="0">
+                        <span class="wf-step__num">01</span>
+                        <h2 class="wf-step__title">Dossier patient</h2>
+                        <p class="wf-step__text">Renseignez l'identité, l'âge et le sexe du patient pour rattacher l'analyse à un dossier clinique traçable.</p>
+                    </article>
+                    <article class="wf-step" data-step="1">
+                        <span class="wf-step__num">02</span>
+                        <h2 class="wf-step__title">Acquisition du scan</h2>
+                        <p class="wf-step__text">Importez l'image CT Scan thoracique — JPG, PNG, DICOM ou TIFF — par glisser-déposer ou sélection manuelle.</p>
+                    </article>
+                    <article class="wf-step" data-step="2">
+                        <span class="wf-step__num">03</span>
+                        <h2 class="wf-step__title">Analyse CNN</h2>
+                        <p class="wf-step__text">Le réseau de neurones convolutif classe l'image en normal, bénin ou malin et localise les zones suspectes.</p>
+                    </article>
+                    <article class="wf-step" data-step="3">
+                        <span class="wf-step__num">04</span>
+                        <h2 class="wf-step__title">Lecture médicale</h2>
+                        <p class="wf-step__text">Le score de confiance, le stade estimé et la carte Grad-CAM guident votre relecture experte du cas.</p>
+                    </article>
+                    <article class="wf-step" data-step="4">
+                        <span class="wf-step__num">05</span>
+                        <h2 class="wf-step__title">Rapport &amp; validation</h2>
+                        <p class="wf-step__text">Ajoutez vos annotations cliniques et exportez un rapport prêt à partager avec le patient ou l'équipe.</p>
+                    </article>
+                </div>
+
+                <div class="wf-cinema__nav" id="wfNav" role="tablist" aria-label="Étapes du workflow">
+                    <button type="button" class="wf-dot is-active" data-goto="0" role="tab" aria-selected="true"  aria-label="Étape 1 — Dossier patient"></button>
+                    <button type="button" class="wf-dot"           data-goto="1" role="tab" aria-selected="false" aria-label="Étape 2 — Acquisition du scan"></button>
+                    <button type="button" class="wf-dot"           data-goto="2" role="tab" aria-selected="false" aria-label="Étape 3 — Analyse CNN"></button>
+                    <button type="button" class="wf-dot"           data-goto="3" role="tab" aria-selected="false" aria-label="Étape 4 — Lecture médicale"></button>
+                    <button type="button" class="wf-dot"           data-goto="4" role="tab" aria-selected="false" aria-label="Étape 5 — Rapport et validation"></button>
+                </div>
+            </div>
+        </section>
 
         <?= html_flash() ?>
 
@@ -563,7 +706,7 @@ $currentFile = basename(__FILE__);
                             <div class="drop-zone__info">JPG · PNG · DICOM · TIFF &nbsp;|&nbsp; Max 20 Mo</div>
                         </div>
                         <div class="drop-zone__scan-preview" id="scanPreviewInZone" aria-live="polite">
-                            <img id="scanPreviewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/CTScan.png')) ?>" data-placeholder="<?= htmlspecialchars(scan_get_url('/assets/images/CTScan.png')) ?>" alt="Aperçu du scan sélectionné">
+                            <img id="scanPreviewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/CTScan.png')) ?>" alt="Aperçu du scan sélectionné">
                             <div class="drop-zone__scan-meta">
                                 <i class="fa-solid fa-file-medical" style="color:var(--blue-500)"></i>
                                 <div style="min-width:0;flex:1">
@@ -578,7 +721,7 @@ $currentFile = basename(__FILE__);
                     </div>
 
                     <div class="file-preview" id="filePreview">
-                        <img id="previewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/scan-placeholder.svg')) ?>" data-placeholder="<?= htmlspecialchars(scan_get_url('/assets/images/scan-placeholder.svg')) ?>" alt="Aperçu scan">
+                        <img id="previewImg" src="<?= htmlspecialchars(scan_get_url('/assets/images/scan-placeholder.svg')) ?>" alt="Aperçu scan">
                         <div class="file-preview__info">
                             <div class="file-preview__name" id="previewName"></div>
                             <div class="file-preview__size" id="previewSize"></div>
@@ -617,42 +760,13 @@ $currentFile = basename(__FILE__);
     const removeBtn         = document.getElementById('removeFile');
     const removeBtnInZone   = document.getElementById('removeFileInZone');
     const submitBtn         = document.getElementById('submitBtn');
-    const form               = document.getElementById('detectionForm');
+    const form              = document.getElementById('detectionForm');
 
     if (!dropZone) return;
-
-    // Formats que TOUS les navigateurs savent décoder et afficher dans une
-    // balise <img>. Le DICOM (.dcm) et souvent le TIFF (.tif/.tiff) n'en
-    // font pas partie : impossible de les "afficher" côté client quel que
-    // soit le procédé (FileReader ou ObjectURL) — le navigateur ne sait
-    // simplement pas les décoder. On le montre alors clairement plutôt que
-    // de laisser une image cassée ou une zone vide.
-    const RENDERABLE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'bmp'];
-
-    // URL locale (blob:) créée pour l'aperçu en cours — révoquée à chaque
-    // changement pour ne pas accumuler de mémoire (bonne pratique).
-    let currentObjectUrl = null;
 
     function formatSize(bytes) {
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
         return (bytes / 1048576).toFixed(1) + ' Mo';
-    }
-
-    function getExt(filename) {
-        return (filename.split('.').pop() || '').toLowerCase();
-    }
-
-    function isRenderable(file) {
-        // On se fie d'abord à l'extension (fiable pour dcm/tiff, contrairement
-        // à file.type qui est souvent une chaîne vide pour ces formats).
-        return RENDERABLE_EXT.includes(getExt(file.name));
-    }
-
-    function releaseObjectUrl() {
-        if (currentObjectUrl) {
-            URL.revokeObjectURL(currentObjectUrl);
-            currentObjectUrl = null;
-        }
     }
 
     function showPreview(file) {
@@ -662,43 +776,25 @@ $currentFile = basename(__FILE__);
         if (scanPreviewSize) scanPreviewSize.textContent = formatSize(file.size);
         dropZone.classList.add('has-file');
 
-        releaseObjectUrl();
-
-        if (isRenderable(file)) {
-            // Aperçu instantané : ObjectURL est créé en mémoire, sans lecture
-            // ni encodage base64 — c'est immédiat, contrairement à FileReader.
-            currentObjectUrl = URL.createObjectURL(file);
-
-            if (previewImg) {
-                previewImg.src = currentObjectUrl;
-                previewImg.style.display = 'block';
-                previewImg.classList.remove('is-fallback');
-            }
-            if (scanPreviewImg) {
-                scanPreviewImg.src = currentObjectUrl;
-                scanPreviewImg.style.display = 'block';
-                scanPreviewImg.style.maxWidth = '100%';
-                scanPreviewImg.style.height = 'auto';
-                scanPreviewImg.classList.remove('is-fallback');
-            }
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                }
+                if (scanPreviewImg) {
+                    scanPreviewImg.src = e.target.result;
+                    scanPreviewImg.style.display = 'block';
+                    scanPreviewImg.style.maxWidth = '100%';
+                    scanPreviewImg.style.height = 'auto';
+                }
+            };
+            reader.readAsDataURL(file);
         } else {
-            // Format non décodable par le navigateur (DICOM, certains TIFF) :
-            // on l'assume clairement au lieu de laisser une image cassée.
-            // Le fichier sera néanmoins bien envoyé et analysé normalement.
-            const placeholder = previewImg ? previewImg.dataset.placeholder : '';
-            if (previewImg) {
-                previewImg.src = placeholder || previewImg.src;
-                previewImg.style.display = 'block';
-                previewImg.classList.add('is-fallback');
-            }
-            if (scanPreviewImg) {
-                scanPreviewImg.src = scanPreviewImg.dataset.placeholder || scanPreviewImg.src;
-                scanPreviewImg.style.display = 'block';
-                scanPreviewImg.classList.add('is-fallback');
-            }
-            if (scanPreviewName) {
-                scanPreviewName.textContent = file.name + ' — aperçu indisponible pour ce format';
-            }
+            if (previewImg) previewImg.src = '';
+            if (previewImg) previewImg.style.display = 'none';
+            if (scanPreviewImg) scanPreviewImg.src = '';
         }
 
         preview.classList.add('show');
@@ -709,9 +805,8 @@ $currentFile = basename(__FILE__);
         if (fileInput) fileInput.value = '';
         preview.classList.remove('show');
         dropZone.classList.remove('has-file');
-        releaseObjectUrl();
-        if (previewImg) { previewImg.style.display = 'none'; previewImg.classList.remove('is-fallback'); }
-        if (scanPreviewImg) { scanPreviewImg.src = ''; scanPreviewImg.classList.remove('is-fallback'); }
+        if (previewImg) previewImg.style.display = 'none';
+        if (scanPreviewImg) scanPreviewImg.src = '';
         if (scanPreviewName) scanPreviewName.textContent = '';
         if (scanPreviewSize) scanPreviewSize.textContent = '';
         if (scanPreviewInZone) scanPreviewInZone.style.display = 'none';
@@ -741,9 +836,6 @@ $currentFile = basename(__FILE__);
         }
     });
 
-    // Nettoyage mémoire si l'utilisateur quitte/rafraîchit la page
-    window.addEventListener('pagehide', releaseObjectUrl);
-
     // Loading state
     form?.addEventListener('submit', () => {
         if (submitBtn) submitBtn.disabled = true;
@@ -753,29 +845,55 @@ $currentFile = basename(__FILE__);
 })();
 </script>
 
-<!-- ── Slideshow simple du bandeau workflow (.wf-slideshow) ── -->
+<!-- ── Carrousel de texte du bandeau workflow (.wf-cinema) ── -->
 <script>
 (function () {
-    const root = document.getElementById('wfSlideshow');
+    const root = document.getElementById('wfCinema');
     if (!root) return;
 
-    const slides = Array.from(root.querySelectorAll('.wf-slide'));
-    if (slides.length < 2) return;
+    const steps = Array.from(root.querySelectorAll('.wf-step'));
+    const dots  = Array.from(root.querySelectorAll('.wf-dot'));
+    if (!steps.length) return;
 
-    const interval = parseInt(root.dataset.interval, 10) || 1600;
+    const delay = parseInt(root.dataset.autoplay, 10) || 4600;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let index = 0;
+    let timer = null;
 
-    function show(i) {
-        slides[index].classList.remove('is-active');
-        index = (i + slides.length) % slides.length;
-        slides[index].classList.add('is-active');
+    function render() {
+        steps.forEach((el, i) => el.classList.toggle('is-active', i === index));
+        dots.forEach((el, i) => {
+            el.classList.toggle('is-active', i === index);
+            el.setAttribute('aria-selected', i === index ? 'true' : 'false');
+        });
     }
 
-    if (!reduceMotion) {
-        setInterval(() => show(index + 1), interval);
+    function goTo(i, manual) {
+        index = (i + steps.length) % steps.length;
+        render();
+        if (manual) restart();
     }
+
+    function next() { goTo(index + 1); }
+
+    function start() {
+        if (reduceMotion || steps.length < 2) return;
+        stop();
+        timer = setInterval(next, delay);
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function restart() { stop(); start(); }
+
+    dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i, true)));
+
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+    root.addEventListener('focusin', stop);
+    root.addEventListener('focusout', start);
+
+    render();
+    start();
 })();
 </script>
 </body>
