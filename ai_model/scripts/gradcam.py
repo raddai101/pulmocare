@@ -677,6 +677,6 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("  ANALYSE GRAD-CAM TERMINÉE")
     print("=" * 70)
-    print(f"📊 Figure complète : {chemin_fig}")
-    print(f"🖼️  Superposition   : {chemin_superposition}")
+    print(f"Figure complète : {chemin_fig}")
+    print(f"Superposition   : {chemin_superposition}")
     print("\nLes visualisations sont prêtes à être intégrées dans l'interface.")
