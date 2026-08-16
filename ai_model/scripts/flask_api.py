@@ -1,21 +1,41 @@
 """
 =============================================================================
-api_server.py — Serveur Flask : interface entre PHP et le modèle IA Python
+flask_api.py (api_server.py) — Serveur Flask : interface entre PHP et le modèle IA Python
 =============================================================================
 Le back-end PHP envoie l'image CT Scan via HTTP POST.
 Ce serveur reçoit l'image, exécute le CNN, et retourne le rapport JSON.
 
 Endpoints :
-    POST /predict          → diagnostic complet (JSON)
-    POST /predict/gradcam  → diagnostic + heatmap Grad-CAM (JSON + image B64)
-    GET  /health           → état du serveur + modèle
-    GET  /classes          → liste des classes détectables
-    GET  /taxonomy         → taxonomie médicale complète
+    POST /predict          → diagnostic complet + Grad-CAM (JSON + image B64)
+    POST /predict/gradcam  → alias historique, identique à /predict
+    GET  /health            → état du serveur + modèle
+    GET  /classes           → liste des classes détectables
+    GET  /taxonomy          → taxonomie médicale complète
+
+─────────────────────────────────────────────────────────────────────────────
+CORRECTIF (par rapport à la version précédente) :
+  - AVANT : seul /predict/gradcam calculait le Grad-CAM. /predict (utilisé
+    en pratique selon la config PHP / flask_api_copy.py) n'appelait JAMAIS
+    gradcam.py → aucune carte d'activation n'était jamais générée.
+  - AVANT : si gradcam_complet() levait une exception (couche introuvable,
+    erreur mémoire...), TOUTE la requête échouait (HTTP 500) — le médecin
+    perdait même le diagnostic de base à cause d'un souci Grad-CAM.
+  - AVANT : le fichier temporaire '_temp_gradcam.jpg' était partagé entre
+    TOUTES les requêtes concurrentes → collision possible entre deux
+    médecins qui analysent en même temps.
+
+  MAINTENANT :
+  - /predict ET /predict/gradcam appellent la MÊME fonction interne, qui
+    tente SYSTÉMATIQUEMENT le Grad-CAM à chaque analyse.
+  - Un échec Grad-CAM est journalisé (console) mais ne fait JAMAIS échouer
+    le diagnostic : rapport['gradcam'] reste simplement à None.
+  - Chaque requête utilise un fichier temporaire unique (uuid4).
 =============================================================================
 """
 
 import os
 import io
+import uuid
 import base64
 import json
 import traceback
@@ -84,7 +104,7 @@ def reponse_succes(donnees: dict, code: int = 200):
         'donnees':    donnees
     }), code
 
-# Orange-#@2025/\=13@NS
+
 def reponse_erreur(message: str, code: int = 400, detail: str = None):
     """Formatte une réponse JSON d'erreur."""
     corps = {
@@ -158,6 +178,77 @@ def image_vers_base64(image_np: np.ndarray, format_img: str = '.jpg') -> str:
 
 
 # =============================================================================
+# Diagnostic + Grad-CAM — cœur du correctif
+# =============================================================================
+
+def diagnostiquer_avec_gradcam(
+    image_bytes: bytes,
+    localisation: str = 'variable',
+    couche_conv: str = None
+) -> dict:
+    """
+    Calcule le diagnostic complet ET tente SYSTÉMATIQUEMENT le Grad-CAM.
+
+    Le Grad-CAM ne fait JAMAIS échouer la requête : en cas de problème
+    (couche introuvable, erreur de calcul...), le rapport de diagnostic
+    est quand même renvoyé — simplement avec rapport['gradcam'] = None.
+    C'est le comportement attendu par le médecin : il doit TOUJOURS avoir
+    au minimum le verdict CNN, même si la visualisation échoue.
+
+    Paramètres
+    ----------
+    image_bytes  : bytes   Contenu binaire de l'image CT Scan
+    localisation : str     'central' | 'peripherique' | 'variable'
+    couche_conv  : str     Nom de couche conv à cibler (optionnel)
+
+    Retourne
+    --------
+    dict : rapport complet, avec clé 'gradcam' (dict ou None)
+    """
+    model   = charger_modele_global()
+    rapport = diagnostiquer_depuis_bytes(image_bytes, model, localisation)
+    rapport['gradcam'] = None
+
+    # Fichier temporaire UNIQUE par requête (évite toute collision entre
+    # deux analyses lancées en même temps par deux médecins différents).
+    chemin_tmp = os.path.join(EXPORTS_DIR, f'_temp_gradcam_{uuid.uuid4().hex}.jpg')
+
+    try:
+        os.makedirs(EXPORTS_DIR, exist_ok=True)
+        with open(chemin_tmp, 'wb') as f:
+            f.write(image_bytes)
+
+        classe_idx = rapport['niveau1_cnn']['classe_idx']
+        nom_couche = couche_conv or 'conv_bloc_4_conv'
+        gc_result  = gradcam_complet(model, chemin_tmp, classe_idx, nom_couche)
+
+        # Affiner la localisation à partir de Grad-CAM si elle était inconnue
+        loc_auto = gc_result['localisation']['localisation']
+        if localisation == 'variable' and loc_auto != 'variable':
+            rapport = diagnostiquer_depuis_bytes(image_bytes, model, loc_auto)
+
+        rapport['gradcam'] = {
+            'superposition_b64':   image_vers_base64(gc_result['superposition']),
+            'image_originale_b64': image_vers_base64(gc_result['image_originale']),
+            'localisation':        gc_result['localisation'],
+            'bounding_box':        gc_result['bounding_box'],
+        }
+
+    except Exception as e:
+        # On journalise clairement la VRAIE cause de l'échec Grad-CAM
+        # (avant, cette exception faisait planter toute la requête sans
+        # jamais être visible clairement dans les logs).
+        print(f"[Grad-CAM] Échec du calcul pour cette analyse : {type(e).__name__}: {e}")
+        traceback.print_exc()
+
+    finally:
+        if os.path.exists(chemin_tmp):
+            os.remove(chemin_tmp)
+
+    return rapport
+
+
+# =============================================================================
 # Enregistrement des routes
 # =============================================================================
 
@@ -207,28 +298,27 @@ def enregistrer_routes(app: Flask):
     @app.route('/predict', methods=['POST'])
     def predict():
         """
-        Prédiction CNN + diagnostic enrichi sur une image CT Scan.
+        Prédiction CNN + diagnostic enrichi + Grad-CAM sur une image CT Scan.
 
         Corps de la requête (multipart/form-data) :
             image        : fichier image CT Scan
             localisation : str (optionnel) 'central'|'peripherique'|'variable'
+            couche_conv  : str (optionnel) — nom de couche conv pour Grad-CAM
 
         Retourne :
-            JSON : rapport de diagnostic complet (Niveau 1 + Niveau 2)
+            JSON : rapport de diagnostic complet, avec 'gradcam' inclus
+            (systématiquement tenté ; peut être null en cas d'échec isolé).
         """
         try:
-            # Validation de l'image
             fichier      = request.files.get('image')
             image_bytes  = valider_image(fichier)
             localisation = request.form.get('localisation', 'variable')
+            couche_conv  = request.form.get('couche_conv', None)
 
             if localisation not in ('central', 'peripherique', 'variable'):
                 localisation = 'variable'
 
-            # Prédiction
-            model   = charger_modele_global()
-            rapport = diagnostiquer_depuis_bytes(image_bytes, model, localisation)
-
+            rapport = diagnostiquer_avec_gradcam(image_bytes, localisation, couche_conv)
             return reponse_succes(rapport)
 
         except ValueError as e:
@@ -242,69 +332,20 @@ def enregistrer_routes(app: Flask):
     @app.route('/predict/gradcam', methods=['POST'])
     def predict_gradcam():
         """
-        Prédiction CNN + Grad-CAM + diagnostic enrichi.
-
-        Corps de la requête (multipart/form-data) :
-            image        : fichier image CT Scan
-            localisation : str (optionnel)
-            couche_conv  : str (optionnel) — nom de la couche conv pour Grad-CAM
-
-        Retourne :
-            JSON : rapport + images Grad-CAM encodées en Base64
+        Alias historique de /predict — conservé pour compatibilité avec les
+        configurations PHP existantes (AI_API_URL par défaut). Le Grad-CAM
+        est désormais TOUJOURS inclus par /predict lui-même, donc ce endpoint
+        se contente de déléguer au même traitement.
         """
-        try:
-            fichier     = request.files.get('image')
-            image_bytes = valider_image(fichier)
-            localisation = request.form.get('localisation', 'variable')
-            couche_conv  = request.form.get('couche_conv', None)
-
-            model  = charger_modele_global()
-            rapport = diagnostiquer_depuis_bytes(image_bytes, model, localisation)
-
-            # Sauvegarde temporaire pour Grad-CAM
-            chemin_tmp = os.path.join(EXPORTS_DIR, '_temp_gradcam.jpg')
-            os.makedirs(EXPORTS_DIR, exist_ok=True)
-            with open(chemin_tmp, 'wb') as f:
-                f.write(image_bytes)
-
-            # Calcul Grad-CAM
-            classe_idx = rapport['niveau1_cnn']['classe_idx']
-            nom_couche  = couche_conv or 'conv_bloc_4_conv'
-            gc_result   = gradcam_complet(model, chemin_tmp, classe_idx, nom_couche)
-
-            # Mise à jour de la localisation depuis Grad-CAM
-            loc_auto = gc_result['localisation']['localisation']
-            if localisation == 'variable' and loc_auto != 'variable':
-                rapport = diagnostiquer_depuis_bytes(image_bytes, model, loc_auto)
-
-            # Encodage des images en Base64 pour le front-end
-            rapport['gradcam'] = {
-                'superposition_b64':  image_vers_base64(gc_result['superposition']),
-                'image_originale_b64': image_vers_base64(gc_result['image_originale']),
-                'localisation':        gc_result['localisation'],
-                'bounding_box':        gc_result['bounding_box']
-            }
-
-            # Nettoyage fichier temporaire
-            if os.path.exists(chemin_tmp):
-                os.remove(chemin_tmp)
-
-            return reponse_succes(rapport)
-
-        except ValueError as e:
-            return reponse_erreur(str(e), code=400)
-        except Exception as e:
-            detail = traceback.format_exc() if app.debug else None
-            return reponse_erreur(
-                "Erreur lors du calcul Grad-CAM.", code=500, detail=detail
-            )
+        return predict()
 
     # ── POST /predict/batch ───────────────────────────────────────────────────
 
     @app.route('/predict/batch', methods=['POST'])
     def predict_batch():
         """
-        Prédiction sur plusieurs images CT Scan en une requête.
+        Prédiction sur plusieurs images CT Scan en une requête (avec Grad-CAM
+        pour chaque image, avec la même résilience que /predict).
 
         Corps de la requête (multipart/form-data) :
             images[]     : fichiers images (plusieurs)
@@ -322,13 +363,12 @@ def enregistrer_routes(app: Flask):
             if len(fichiers) > 20:
                 return reponse_erreur("Maximum 20 images par lot.", code=400)
 
-            model    = charger_modele_global()
             resultats = []
 
             for fichier in fichiers:
                 try:
                     image_bytes = valider_image(fichier)
-                    rapport     = diagnostiquer_depuis_bytes(image_bytes, model, localisation)
+                    rapport     = diagnostiquer_avec_gradcam(image_bytes, localisation)
                     resultats.append({
                         'image':   fichier.filename,
                         'rapport': rapport,
@@ -364,9 +404,8 @@ def enregistrer_routes(app: Flask):
     @app.errorhandler(413)
     def request_entity_too_large(e):
         return reponse_erreur("Fichier trop volumineux (max 50 Mo).", code=413)
-    
-    
+
+
 if __name__ == '__main__':
     app = creer_application()
     app.run(host='0.0.0.0', port=5000, debug=True)
-

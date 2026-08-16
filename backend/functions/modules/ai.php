@@ -30,7 +30,13 @@ function ai_predict(string $imagePath): array
 
 function ai_call_python(string $imagePath): ?string
 {
-    $method = env('AI_METHOD', 'exec');
+    // BUGFIX : la valeur par défaut était 'exec', qui invoque predict.py en
+    // ligne de commande. Or predict.py --image X ne parse pas réellement
+    // ce flag (pas d'argparse dans son __main__) : l'appel échoue à chaque
+    // fois et on repartait systématiquement sur l'appel API en repli, en
+    // perdant un aller-retour process pour rien. On appelle directement
+    // l'API Flask, qui est le chemin réellement utilisé et fonctionnel.
+    $method = env('AI_METHOD', 'api');
 
     if ($method === 'api') {
         return ai_call_flask_api($imagePath);
@@ -150,8 +156,8 @@ function ai_normalize_flask_report(array $report): array
 
     $stageInfo = $diag['stade_tnm'] ?? [];
     $stage = $stageInfo['numero'] ?? $stageInfo['stade'] ?? null;
-    if (is_string($stage)) {
-        $stage = strtoupper(trim(str_replace('Stade', '', $stage)));
+    if ($stage !== null) {
+        $stage = strtoupper(trim(str_replace('Stade', '', (string)$stage)));
     }
 
     return [
