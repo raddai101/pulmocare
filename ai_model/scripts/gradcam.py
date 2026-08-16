@@ -8,6 +8,30 @@ Indispensable en médecine : le médecin doit comprendre POURQUOI le modèle
 a pris sa décision.
 
 Architecture modulaire : chaque opération est une fonction pure.
+
+─────────────────────────────────────────────────────────────────────────────
+CORRECTIFS (par rapport à la version précédente) :
+
+  1) HEATMAP PLATE (superposition uniformément bleu foncé, sans zone chaude) :
+     calculer_gradcam() calculait le gradient à partir de model.output, qui
+     est DÉJÀ passé par softmax (voir model_builder.py :
+     Dense(num_classes, activation='softmax')). Erreur Grad-CAM classique :
+     les probabilités softmax sommant à 1, le gradient de la classe gagnante
+     devient quasi nul pour une prédiction confiante (dilué par les autres
+     classes) → heatmap.max() ≈ 0 → toute la carte reste à 0 → colormap JET
+     colorie tout en bleu foncé uniforme (couleur du minimum). Le calcul se
+     fait maintenant sur les LOGITS (juste avant le softmax), recalculés
+     manuellement à partir des poids réels de la dernière couche Dense —
+     sans avoir à modifier ni recharger le modèle.
+
+  2) IMAGE DE FOND DÉFORMÉE : gradcam_complet() réutilisait l'image
+     ENTIÈREMENT prétraitée (letterbox + CLAHE + débruitage) comme fond
+     d'affichage pour le médecin, ce qui est nécessaire pour la classif-
+     ication mais donne un rendu trop transformé pour une lecture clinique
+     fidèle. Le fond d'affichage utilise maintenant un simple redimension-
+     nement fidèle (charger_image_affichage()), pendant que le calcul du
+     gradient continue d'utiliser le pipeline complet (obligatoire pour
+     rester cohérent avec ce que le modèle a vu à l'entraînement).
 =============================================================================
 """
 
@@ -24,7 +48,33 @@ from config import (
     GRADCAM_LAYER, GRADCAM_ALPHA, GRADCAM_COLORMAP,
     EXPORTS_DIR, MODEL_PATH, WEIGHTS_DIR
 )
-from preprocess import pretraiter_depuis_chemin, pipeline_pretraitement
+from preprocess import pretraiter_depuis_chemin, pipeline_pretraitement, redimensionner, normaliser
+
+
+# =============================================================================
+# 0. Chargement fidèle pour l'affichage (sans CLAHE ni débruitage)
+# =============================================================================
+
+def charger_image_affichage(chemin: str, taille: tuple = IMG_SIZE) -> np.ndarray:
+    """
+    Charge et redimensionne une image CT Scan pour l'AFFICHAGE au médecin,
+    sans les transformations agressives du pipeline de classification
+    (CLAHE, débruitage) qui rendent le rendu trop artificiel.
+
+    Paramètres
+    ----------
+    chemin : str    Chemin vers l'image
+    taille : tuple  (hauteur, largeur) cible
+
+    Retourne
+    --------
+    np.ndarray : image RGB uint8, redimensionnée (avec letterbox)
+    """
+    image = cv2.imread(chemin)
+    if image is None:
+        raise FileNotFoundError(f"Impossible de charger l'image : {chemin}")
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return redimensionner(image_rgb, taille)
 
 
 # =============================================================================
@@ -43,8 +93,8 @@ def calculer_gradcam(
     Principe :
     ─────────────────────────────────────────────────────────────────
     1. Forward pass jusqu'à la dernière couche convolutive
-    2. Calcul du gradient de la classe cible par rapport aux
-       activations de cette couche (backprop partiel)
+    2. Calcul du gradient des LOGITS de la classe cible (AVANT softmax)
+       par rapport aux activations de cette couche (backprop partiel)
     3. Moyenne des gradients par canal (pooling global)
     4. Combinaison linéaire : poids × cartes d'activation
     5. ReLU + normalisation → heatmap [0, 1]
@@ -72,17 +122,28 @@ def calculer_gradcam(
         couche_cible = couches_conv[-1]
         print(f"[Grad-CAM] Couche '{nom_couche_conv}' introuvable → fallback : {couche_cible.name}")
 
-    # Modèle intermédiaire : entrée → (activations_conv, logits_sortie)
+    # ── CORRECTIF : travailler sur les LOGITS, pas les probabilités ──────────
+    # La dernière couche Dense applique déjà softmax (model_builder.py).
+    # On récupère son entrée (juste avant l'activation) et on recalcule
+    # manuellement W·x + b avec les poids RÉELLEMENT entraînés, ce qui donne
+    # exactement les logits — sans jamais avoir à modifier ni recloner le
+    # modèle chargé.
+    derniere_couche = model.layers[-1]
+    poids_sortie, biais_sortie = derniere_couche.get_weights()
+    entree_derniere_couche = derniere_couche.input
+
+    # Modèle intermédiaire : entrée → (activations_conv, entrée_de_la_sortie)
     grad_model = tf.keras.Model(
         inputs=model.inputs,
-        outputs=[couche_cible.output, model.output]
+        outputs=[couche_cible.output, entree_derniere_couche]
     )
 
     # Calcul du gradient avec GradientTape
     with tf.GradientTape() as tape:
-        inputs            = tf.cast(image_prep, tf.float32)
-        activations_conv, predictions = grad_model(inputs)
-        score_classe      = predictions[:, classe_idx]
+        inputs = tf.cast(image_prep, tf.float32)
+        activations_conv, entree_sortie = grad_model(inputs)
+        logits = tf.matmul(entree_sortie, poids_sortie) + biais_sortie  # AVANT softmax
+        score_classe = logits[:, classe_idx]
 
     # Gradients de la classe cible par rapport aux feature maps
     gradients = tape.gradient(score_classe, activations_conv)
@@ -104,6 +165,13 @@ def calculer_gradcam(
     # Normalisation [0, 1]
     if heatmap.max() > 0:
         heatmap /= heatmap.max()
+    else:
+        # Heatmap réellement plate malgré le correctif logits (cas rare) :
+        # on le journalise clairement plutôt que de renvoyer un bleu muet
+        # sans explication.
+        print("[Grad-CAM] Attention : heatmap entièrement nulle même sur les "
+              "logits — le modèle n'active aucune zone distinctement pour "
+              "cette classe sur cette image.")
 
     return heatmap
 
@@ -292,6 +360,13 @@ def gradcam_complet(
     """
     Pipeline Grad-CAM complet depuis un chemin d'image.
 
+    Le CALCUL du gradient utilise le pipeline de prétraitement complet
+    (CLAHE + débruitage) — indispensable pour rester cohérent avec ce
+    que le modèle a vu à l'entraînement. En revanche, l'image de FOND
+    utilisée pour la superposition affichée au médecin est chargée de
+    façon plus fidèle (charger_image_affichage), sans ces transformations
+    qui rendaient le rendu visuellement déformé.
+
     Paramètres
     ----------
     model           : tf.keras.Model
@@ -310,28 +385,28 @@ def gradcam_complet(
         'image_originale' : np.ndarray
     }
     """
-    # Chargement et prétraitement
+    # Prétraitement complet — uniquement pour le calcul du gradient
     image_batch = pretraiter_depuis_chemin(chemin_image)
-    image_prep  = image_batch[0]                          # (H, W, C) float32
-
-    # Calcul Grad-CAM
     heatmap = calculer_gradcam(model, image_batch, classe_idx, nom_couche_conv)
 
-    # Superposition
-    superposition = superposer_heatmap(image_prep, heatmap, alpha=alpha)
+    # Image de fond fidèle pour l'affichage médecin (pas de CLAHE/débruitage)
+    image_affichage = charger_image_affichage(chemin_image, IMG_SIZE)
+
+    # Superposition sur l'image fidèle
+    superposition = superposer_heatmap(image_affichage, heatmap, alpha=alpha)
 
     # Analyse de localisation
     loc_info = detecter_localisation_depuis_heatmap(heatmap)
 
     # Bounding box
-    bbox = extraire_bounding_box(heatmap, image_prep.shape)
+    bbox = extraire_bounding_box(heatmap, image_affichage.shape)
 
     return {
         'heatmap':          heatmap,
         'superposition':    superposition,
         'localisation':     loc_info,
         'bounding_box':     bbox,
-        'image_originale':  (image_prep * 255).astype(np.uint8)
+        'image_originale':  image_affichage
     }
 
 
