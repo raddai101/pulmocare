@@ -149,7 +149,12 @@ def mode_train(args):
     from config import (
         CONV_BLOCKS, DENSE_LAYERS, LEARNING_RATE, N_EPOCHS, BATCH_SIZE
     )
-    from preprocess import charger_donnees_depuis_dossiers
+    # CORRECTIF (Option B) : charger_donnees_tf() remplace
+    # charger_donnees_depuis_dossiers() pour l'entraînement — même
+    # prétraitement (recadrage + resize + normalisation) qu'à l'inférence,
+    # ce qui élimine le décalage entraînement/inférence. calculer_class_weights()
+    # réduit en plus le biais dû au déséquilibre entre classes.
+    from preprocess import charger_donnees_tf, calculer_class_weights
     from train_model import entrainer_cnn, entrainer_avec_transfer
 
     # Résolution des paramètres : CLI > config.py
@@ -170,10 +175,11 @@ def mode_train(args):
     if args.transfer:
         print(f"  transfer     : {args.transfer}")
 
-    # Chargement des données
-    flux_train, flux_val, flux_test = charger_donnees_depuis_dossiers(
-        batch_size=batch_size
-    )
+    # Chargement des données (pipeline tf.data aligné sur l'inférence)
+    flux_train, flux_val, flux_test = charger_donnees_tf(batch_size=batch_size)
+
+    # Pondération des classes — réduit le biais dû au déséquilibre
+    class_weight = calculer_class_weights()
 
     if args.transfer:
         model, history, exp = entrainer_avec_transfer(
@@ -189,7 +195,8 @@ def mode_train(args):
             dense_layers=dense_layers,
             learning_rate=lr,
             n_epochs=epochs,
-            nom_experience=args.experience
+            nom_experience=args.experience,
+            class_weight=class_weight
         )
 
     print(f"\n[✓] Entraînement terminé. Expérience : {exp}")

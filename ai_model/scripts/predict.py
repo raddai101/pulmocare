@@ -23,7 +23,10 @@ from config import (
     CANCER_TYPES, STADES_TNM, LOCALISATIONS,
     SEUILS_RISQUE, COULEURS_RISQUE, IMG_SIZE
 )
-from preprocess import pretraiter_depuis_chemin, pipeline_pretraitement
+from preprocess import (
+    pretraiter_depuis_chemin, pipeline_pretraitement,
+    pretraiter_pour_inference, pretraiter_tableau_pour_inference
+)
 from model_builder import charger_modele
 
 
@@ -76,12 +79,22 @@ def predire_depuis_tableau(
 def predire_depuis_chemin(
     chemin_image: str,
     model,
-    appliquer_contraste: bool = True,
-    appliquer_debruitage: bool = True
+    appliquer_contraste: bool = False,
+    appliquer_debruitage: bool = False
 ) -> dict:
     """
     Charge, prétraite et prédit depuis un chemin d'image.
     Point d'entrée principal pour la prédiction en production.
+
+    CORRECTIF (Option A) : appliquer_contraste/appliquer_debruitage valent
+    désormais False par défaut. Le CNN a été entraîné via Keras
+    flow_from_directory (simple resize + rescale, sans CLAHE ni débruitage
+    ni padding) — lui donner à l'inférence une image transformée avec un
+    pipeline qu'il n'a jamais vu à l'entraînement faussait la prédiction et
+    rendait Grad-CAM incohérent. Le prétraitement par défaut reproduit donc
+    exactement ce que voit le modèle à l'entraînement. Passer True à l'un
+    des deux flags réactive l'ancien pipeline enrichi (utile pour comparer,
+    ou si le modèle est un jour ré-entraîné avec ce même pipeline riche).
 
     Paramètres
     ----------
@@ -94,23 +107,30 @@ def predire_depuis_chemin(
     --------
     dict : résultat brut de prédiction Niveau 1
     """
-    image_batch = pretraiter_depuis_chemin(
-        chemin_image,
-        appliquer_contraste=appliquer_contraste,
-        appliquer_debruitage=appliquer_debruitage
-    )
+    if appliquer_contraste or appliquer_debruitage:
+        image_batch = pretraiter_depuis_chemin(
+            chemin_image,
+            appliquer_contraste=appliquer_contraste,
+            appliquer_debruitage=appliquer_debruitage
+        )
+    else:
+        image_batch = pretraiter_pour_inference(chemin_image)
+
     return predire_depuis_tableau(image_batch, model)
 
 
 def predire_depuis_bytes(
     image_bytes: bytes,
     model,
-    appliquer_contraste: bool = True,
-    appliquer_debruitage: bool = True
+    appliquer_contraste: bool = False,
+    appliquer_debruitage: bool = False
 ) -> dict:
     """
     Prédit depuis des bytes d'image (upload PHP via l'API).
     Compatible avec le backend PHP qui envoie l'image en base64 décodée.
+
+    CORRECTIF (Option A) : voir predire_depuis_chemin() ci-dessus — mêmes
+    valeurs par défaut, même raisonnement.
 
     Paramètres
     ----------
@@ -129,11 +149,16 @@ def predire_depuis_bytes(
         raise ValueError("Impossible de décoder l'image depuis les bytes fournis.")
 
     image_rgb  = cv2.cvtColor(image_brute, cv2.COLOR_BGR2RGB)
-    image_prep = pipeline_pretraitement(
-        image_rgb,
-        appliquer_contraste=appliquer_contraste,
-        appliquer_debruitage=appliquer_debruitage
-    )
+
+    if appliquer_contraste or appliquer_debruitage:
+        image_prep = pipeline_pretraitement(
+            image_rgb,
+            appliquer_contraste=appliquer_contraste,
+            appliquer_debruitage=appliquer_debruitage
+        )
+    else:
+        image_prep = pretraiter_tableau_pour_inference(image_rgb)
+
     return predire_depuis_tableau(np.expand_dims(image_prep, 0), model)
 
 

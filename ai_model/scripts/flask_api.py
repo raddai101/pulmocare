@@ -329,15 +329,15 @@ def enregistrer_routes(app: Flask):
 
     # ── POST /predict/gradcam ─────────────────────────────────────────────────
 
-    @app.route('/predict/gradcam', methods=['POST'])
-    def predict_gradcam():
-        """
-        Alias historique de /predict — conservé pour compatibilité avec les
-        configurations PHP existantes (AI_API_URL par défaut). Le Grad-CAM
-        est désormais TOUJOURS inclus par /predict lui-même, donc ce endpoint
-        se contente de déléguer au même traitement.
-        """
-        return predict()
+    # @app.route('/predict/gradcam', methods=['POST'])
+    # def predict_gradcam():
+    #     """
+    #     Alias historique de /predict — conservé pour compatibilité avec les
+    #     configurations PHP existantes (AI_API_URL par défaut). Le Grad-CAM
+    #     est désormais TOUJOURS inclus par /predict lui-même, donc ce endpoint
+    #     se contente de déléguer au même traitement.
+    #     """
+    #     return predict()
 
     # ── POST /predict/batch ───────────────────────────────────────────────────
 

@@ -446,7 +446,9 @@ def main():
 
     args = parser.parse_args()
 
-    from preprocess import charger_donnees_depuis_dossiers
+    # CORRECTIF (Option B) : pipeline tf.data aligné sur l'inférence +
+    # pondération automatique des classes (voir preprocess.py).
+    from preprocess import charger_donnees_tf, calculer_class_weights
 
     batch_size = args.batch_size if args.batch_size is not None else BATCH_SIZE
     epochs = args.epochs if args.epochs is not None else N_EPOCHS
@@ -460,7 +462,8 @@ def main():
     print(f"  learning_rate : {lr}")
     print(f"  transfer   : {args.transfer if args.transfer else 'aucun'}")
 
-    flux_train, flux_val, _ = charger_donnees_depuis_dossiers(batch_size=batch_size)
+    flux_train, flux_val, _ = charger_donnees_tf(batch_size=batch_size)
+    class_weight = calculer_class_weights()
 
     if args.transfer:
         model, history, exp = entrainer_avec_transfer(
@@ -473,7 +476,8 @@ def main():
             flux_train, flux_val,
             learning_rate=lr,
             n_epochs=epochs,
-            nom_experience=args.experience
+            nom_experience=args.experience,
+            class_weight=class_weight
         )
 
     print(f"\n[✓] Entraînement terminé. Expérience : {exp}")

@@ -1,0 +1,25 @@
+RAPPORT DE DIVISION DU DATASET
+============================================================
+
+TRAIN:
+  Benign: 722
+  Malignant: 1308
+  Normal: 981
+  Total: 3011
+
+TEST:
+  Benign: 154
+  Malignant: 280
+  Normal: 210
+  Total: 644
+
+VAL:
+  Benign: 156
+  Malignant: 281
+  Normal: 211
+  Total: 648
+
+Total général: 4303 images
+Train: 70.0%
+Test: 15.0%
+Validation: 15.1%

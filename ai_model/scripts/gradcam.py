@@ -24,14 +24,20 @@ CORRECTIFS (par rapport à la version précédente) :
      manuellement à partir des poids réels de la dernière couche Dense —
      sans avoir à modifier ni recharger le modèle.
 
-  2) IMAGE DE FOND DÉFORMÉE : gradcam_complet() réutilisait l'image
-     ENTIÈREMENT prétraitée (letterbox + CLAHE + débruitage) comme fond
-     d'affichage pour le médecin, ce qui est nécessaire pour la classif-
-     ication mais donne un rendu trop transformé pour une lecture clinique
-     fidèle. Le fond d'affichage utilise maintenant un simple redimension-
-     nement fidèle (charger_image_affichage()), pendant que le calcul du
-     gradient continue d'utiliser le pipeline complet (obligatoire pour
-     rester cohérent avec ce que le modèle a vu à l'entraînement).
+  2) IMAGE DE FOND DÉFORMÉE, PUIS BIAIS DE FOND (Option A) : gradcam_complet()
+     réutilisait d'abord l'image entièrement prétraitée (letterbox + CLAHE +
+     débruitage), donnant un rendu trop transformé. Une fois corrigé, la
+     heatmap s'est révélée concentrée en anneau sur le CONTOUR DU CORPS
+     plutôt que sur le tissu pulmonaire : le modèle a été entraîné via Keras
+     flow_from_directory (simple resize par étirement + rescale, SANS
+     letterbox/CLAHE/débruitage) — lui montrer à l'inférence une image avec
+     des bandes noires artificielles qu'il n'a jamais vues à l'entraînement
+     le poussait à se raccrocher à ces bandes plutôt qu'au contenu réel.
+     gradcam_complet() utilise désormais pretraiter_pour_inference()
+     (preprocess.py), qui reproduit EXACTEMENT le prétraitement de
+     l'entraînement. L'image de fond affichée au médecin est en plus
+     directement dérivée de ce même tenseur (alignement pixel-parfait avec
+     la heatmap, plus de second chargement).
 =============================================================================
 """
 
@@ -48,33 +54,20 @@ from config import (
     GRADCAM_LAYER, GRADCAM_ALPHA, GRADCAM_COLORMAP,
     EXPORTS_DIR, MODEL_PATH, WEIGHTS_DIR
 )
-from preprocess import pretraiter_depuis_chemin, pipeline_pretraitement, redimensionner, normaliser
+from preprocess import pretraiter_pour_inference
 
 
 # =============================================================================
-# 0. Chargement fidèle pour l'affichage (sans CLAHE ni débruitage)
+# 0. Note sur l'image de fond utilisée pour la superposition
 # =============================================================================
-
-def charger_image_affichage(chemin: str, taille: tuple = IMG_SIZE) -> np.ndarray:
-    """
-    Charge et redimensionne une image CT Scan pour l'AFFICHAGE au médecin,
-    sans les transformations agressives du pipeline de classification
-    (CLAHE, débruitage) qui rendent le rendu trop artificiel.
-
-    Paramètres
-    ----------
-    chemin : str    Chemin vers l'image
-    taille : tuple  (hauteur, largeur) cible
-
-    Retourne
-    --------
-    np.ndarray : image RGB uint8, redimensionnée (avec letterbox)
-    """
-    image = cv2.imread(chemin)
-    if image is None:
-        raise FileNotFoundError(f"Impossible de charger l'image : {chemin}")
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    return redimensionner(image_rgb, taille)
+#
+#   L'image de fond affichée au médecin est désormais dérivée DIRECTEMENT du
+#   même tenseur envoyé au CNN (pretraiter_pour_inference), au lieu d'être
+#   rechargée séparément avec un pipeline différent. Deux bénéfices :
+#     1) Alignement pixel-parfait entre la heatmap et le fond affiché.
+#     2) Le médecin voit exactement l'image que le modèle a réellement
+#        "regardée" — plus fidèle et plus honnête qu'un rendu retraité.
+# =============================================================================
 
 
 # =============================================================================
@@ -360,12 +353,18 @@ def gradcam_complet(
     """
     Pipeline Grad-CAM complet depuis un chemin d'image.
 
-    Le CALCUL du gradient utilise le pipeline de prétraitement complet
-    (CLAHE + débruitage) — indispensable pour rester cohérent avec ce
-    que le modèle a vu à l'entraînement. En revanche, l'image de FOND
-    utilisée pour la superposition affichée au médecin est chargée de
-    façon plus fidèle (charger_image_affichage), sans ces transformations
-    qui rendaient le rendu visuellement déformé.
+    CORRECTIF (Option A) : le calcul du gradient utilise désormais
+    pretraiter_pour_inference() — le MÊME prétraitement (simple resize +
+    rescale) que celui vu par le modèle à l'entraînement via Keras
+    flow_from_directory. L'ancien pipeline (letterbox + CLAHE + débruitage)
+    montrait au modèle, au moment de l'analyse, une distribution d'image
+    qu'il n'avait jamais vue à l'entraînement — le réseau se raccrochait
+    alors aux bandes noires artificielles du letterbox plutôt qu'au contenu
+    pulmonaire (heatmap concentrée en anneau sur le contour du corps).
+
+    L'image de FOND affichée au médecin est directement dérivée du même
+    tenseur envoyé au CNN — alignement pixel-parfait avec la heatmap, et le
+    médecin voit exactement ce que le modèle a réellement analysé.
 
     Paramètres
     ----------
@@ -385,14 +384,16 @@ def gradcam_complet(
         'image_originale' : np.ndarray
     }
     """
-    # Prétraitement complet — uniquement pour le calcul du gradient
-    image_batch = pretraiter_depuis_chemin(chemin_image)
+    # Prétraitement ALIGNÉ sur l'entraînement — sert à la fois au calcul
+    # du gradient et à l'image de fond affichée.
+    image_batch = pretraiter_pour_inference(chemin_image)
     heatmap = calculer_gradcam(model, image_batch, classe_idx, nom_couche_conv)
 
-    # Image de fond fidèle pour l'affichage médecin (pas de CLAHE/débruitage)
-    image_affichage = charger_image_affichage(chemin_image, IMG_SIZE)
+    # Image de fond dérivée du même tableau (0..1 float) que celui envoyé
+    # au modèle — pas de second chargement, pas de pipeline différent.
+    image_affichage = (image_batch[0] * 255).astype(np.uint8)
 
-    # Superposition sur l'image fidèle
+    # Superposition
     superposition = superposer_heatmap(image_affichage, heatmap, alpha=alpha)
 
     # Analyse de localisation
